@@ -48,7 +48,7 @@ class ConversationManager:
             timeout = settings.CONVERSATION_TIMEOUT_MINUTES
             if conv.last_message_at:
                 elapsed = (datetime.utcnow() - conv.last_message_at).total_seconds() / 60
-                if elapsed > timeout and conv.current_state not in ("HANDOFF", "ORDER_COMPLETE"):
+                if elapsed > timeout and conv.current_state not in ("ORDER_COMPLETE",):
                     logger.info(f"Conversation {conv.id} timed out, resetting to IDLE")
                     conv.current_state = "IDLE"
                     conv.context_data = {}
@@ -166,6 +166,24 @@ class ConversationManager:
             "content": message,
             "timestamp": datetime.utcnow().isoformat()
         }]
+
+        # إذا المحادثة في حالة HANDOFF، نرد رسالة مختصرة بدون ما نشغّل LLM
+        if conv.current_state == "HANDOFF":
+            response_text = "تم تحويلك إلى الموظف البشري. سيرد عليك في أقرب وقت ممكن ✅"
+            conv.messages = (conv.messages or []) + [{
+                "role": "assistant",
+                "content": response_text,
+                "timestamp": datetime.utcnow().isoformat()
+            }]
+            conv.last_message_at = datetime.utcnow()
+            db.commit()
+            return {
+                "response": response_text,
+                "state": "HANDOFF",
+                "needs_human": True,
+                "context_data": conv.context_data,
+                "conversation_id": conv.id
+            }
 
         # المنتج ثابت في MARIA_SYSTEM_PROMPT — ما نحتاجش نجيبو من DB
         products = []

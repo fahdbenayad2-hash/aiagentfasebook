@@ -57,7 +57,7 @@ async def receive_facebook_webhook(request: Request):
                     result = await conversation_manager.process_incoming_message(
                         db, sender_id, "facebook", message_text
                     )
-                    await _send_facebook_message(sender_id, result["response"])
+                    await _send_messenger_message(sender_id, result["response"])
 
                     if result.get("needs_human"):
                         import asyncio
@@ -116,7 +116,7 @@ async def receive_instagram_webhook(request: Request):
                     result = await conversation_manager.process_incoming_message(
                         db, sender_id, "instagram", message_text
                     )
-                    await _send_facebook_message(sender_id, result["response"])
+                    await _send_messenger_message(sender_id, result["response"])
 
                     if result.get("needs_human"):
                         import asyncio
@@ -169,13 +169,13 @@ async def receive_telegram_webhook(request: Request):
         await _send_telegram_message(chat_id, "ماكاش تحويل نشط دابا. استنى حتى يطلب زبون التحويل لموظف بشري.")
         return {"status": "ok"}
 
-    await _send_facebook_message(psid, f"[موظف بشري] {text}")
+    await _send_messenger_message(psid, f"[موظف بشري] {text}")
     await _send_telegram_message(chat_id, "تم إرسال ردك للزبون ✅")
     logger.info(f"Staff reply forwarded to Facebook PSID {psid}")
     return {"status": "ok"}
 
 
-async def _send_facebook_message(recipient_id: str, message: str):
+async def _send_messenger_message(recipient_id: str, message: str):
     from app.config import settings
     token = settings.FB_PAGE_ACCESS_TOKEN or settings.FACEBOOK_PAGE_ACCESS_TOKEN
     if not token:
