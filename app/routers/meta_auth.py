@@ -34,10 +34,11 @@ async def auth_callback(code: str = None, state: str = None, error: str = None, 
         raise HTTPException(status_code=400, detail="Missing authorization code")
 
     token_url = "https://graph.facebook.com/{}/oauth/access_token".format(settings.FB_API_VERSION or "v18.0")
+    app_secret = settings.FB_APP_SECRET or settings.FACEBOOK_APP_SECRET
     async with httpx.AsyncClient() as client:
         resp = await client.get(token_url, params={
             "client_id": settings.FB_APP_ID,
-            "client_secret": settings.FB_APP_SECRET,
+            "client_secret": app_secret,
             "redirect_uri": settings.FB_REDIRECT_URI,
             "code": code
         })
@@ -54,11 +55,10 @@ async def auth_callback(code: str = None, state: str = None, error: str = None, 
         long_resp = await client.get(token_url, params={
             "grant_type": "fb_exchange_token",
             "client_id": settings.FB_APP_ID,
-            "client_secret": settings.FB_APP_SECRET,
+            "client_secret": app_secret,
             "fb_exchange_token": user_token
         })
         long_data = long_resp.json()
-
     long_token = long_data.get("access_token", user_token)
 
     # Get user's pages
