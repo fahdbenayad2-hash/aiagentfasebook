@@ -1,0 +1,162 @@
+[
+  {
+    "id": "gc-001",
+    "messages": [
+      {"role": "user", "content": "سلام"}
+    ],
+    "expected_intent": "unknown",
+    "tags": ["darija", "greeting"]
+  },
+  {
+    "id": "gc-002",
+    "messages": [
+      {"role": "user", "content": "وين وصل الطلب تاعي رقم ٤٢"}
+    ],
+    "expected_intent": "order_status",
+    "tags": ["darija", "order"]
+  },
+  {
+    "id": "gc-003",
+    "messages": [
+      {"role": "user", "content": "بغيت نلغي الطلب ١٢٣"}
+    ],
+    "expected_intent": "order_cancel",
+    "tags": ["darija", "cancel"]
+  },
+  {
+    "id": "gc-004",
+    "messages": [
+      {"role": "user", "content": "عندكم كراسي تقاعد في تيبازة؟"}
+    ],
+    "expected_intent": "product_info",
+    "tags": ["darija", "product"]
+  },
+  {
+    "id": "gc-005",
+    "messages": [
+      {"role": "user", "content": "بقداش هاد الطاولة؟"}
+    ],
+    "expected_intent": "price_inquiry",
+    "tags": ["darija", "price"]
+  },
+  {
+    "id": "gc-006",
+    "messages": [
+      {"role": "user", "content": "التوصيل تأخر بزاف، شنو المشكل؟"}
+    ],
+    "expected_intent": "delivery_delay",
+    "tags": ["darija", "delivery"]
+  },
+  {
+    "id": "gc-007",
+    "messages": [
+      {"role": "user", "content": "بغيت نرجع المنتج، كيفاه؟"}
+    ],
+    "expected_intent": "return_exchange",
+    "tags": ["darija", "return"]
+  },
+  {
+    "id": "gc-008",
+    "messages": [
+      {"role": "user", "content": "تفتحو وقتاش؟"}
+    ],
+    "expected_intent": "store_hours",
+    "tags": ["darija", "hours"]
+  },
+  {
+    "id": "gc-009",
+    "messages": [
+      {"role": "user", "content": "كيفاش نخلص؟ تقبلو كاش؟"}
+    ],
+    "expected_intent": "payment_methods",
+    "tags": ["darija", "payment"]
+  },
+  {
+    "id": "gc-010",
+    "messages": [
+      {"role": "user", "content": "المنتج اللي جاني مكسور، هذا مش مقبول"}
+    ],
+    "expected_intent": "complaint_product",
+    "tags": ["darija", "complaint"]
+  },
+  {
+    "id": "gc-011",
+    "messages": [
+      {"role": "user", "content": "الخدمة راهي مزيانةش، ما ردوش عليا من ٣ أيام"}
+    ],
+    "expected_intent": "complaint_service",
+    "tags": ["darija", "complaint"]
+  },
+  {
+    "id": "gc-012",
+    "messages": [
+      {"role": "user", "content": "عندكم برومو ولا تخفيضات هاد الشهر؟"}
+    ],
+    "expected_intent": "promo_inquiry",
+    "tags": ["darija", "promo"]
+  },
+  {
+    "id": "gc-013",
+    "messages": [
+      {"role": "user", "content": "حاب نطلب بالجملة، كيفاه؟"}
+    ],
+    "expected_intent": "bulk_order",
+    "tags": ["darija", "bulk"]
+  },
+  {
+    "id": "gc-014",
+    "messages": [
+      {"role": "user", "content": "نحقق في حقوقي، راه غير قانوني هذاك"}
+    ],
+    "expected_intent": "legal_threat",
+    "tags": ["darija", "legal"]
+  },
+  {
+    "id": "gc-015",
+    "messages": [
+      {"role": "user", "content": "دفعت وما جانيش الطلب، هذا احتيال"}
+    ],
+    "expected_intent": "payment_dispute",
+    "tags": ["darija", "payment"]
+  },
+  {
+    "id": "gc-016",
+    "messages": [
+      {"role": "user", "content": "راهم ناس يتعاملو بالاحتيال هنا"}
+    ],
+    "expected_intent": "fraud_suspicion",
+    "tags": ["darija", "fraud"]
+  },
+  {
+    "id": "gc-017",
+    "messages": [
+      {"role": "user", "content": "I want to check the status of my order 456"}
+    ],
+    "expected_intent": "order_status",
+    "tags": ["english", "order"]
+  },
+  {
+    "id": "gc-018",
+    "messages": [
+      {"role": "user", "content": "Bonjour, je veux connaître le prix du canapé"}
+    ],
+    "expected_intent": "price_inquiry",
+    "tags": ["french", "price"]
+  },
+  {
+    "id": "gc-019",
+    "messages": [
+      {"role": "user", "content": "واش عندكم توصيل لعين الدفلى؟"}
+    ],
+    "expected_intent": "delivery_delay",
+    "tags": ["darija", "delivery"]
+  },
+  {
+    "id": "gc-020",
+    "messages": [
+      {"role": "user", "content": "صباح الخير، حبيت نسقس على طلب"}
+    ],
+    "expected_intent": "order_status",
+    "tags": ["darija", "ambiguous"]
+  }
+]

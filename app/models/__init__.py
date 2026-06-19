@@ -9,7 +9,7 @@ class Customer(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     platform_user_id = Column(String, nullable=False, index=True)
-    platform = Column(String, nullable=False)  # 'facebook' or 'instagram'
+    platform = Column(String, nullable=False)
     name = Column(String)
     phone = Column(String)
     state = Column(String)
@@ -27,7 +27,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(Text)
-    price = Column(Integer, nullable=False)  # DZD
+    price = Column(Integer, nullable=False)
     category = Column(String)
     image_url = Column(String)
     stock = Column(Integer, default=0)
@@ -43,7 +43,7 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("customers.id"))
-    status = Column(String, default="pending")  # pending, confirmed, shipped, delivered, cancelled
+    status = Column(String, default="pending")
     total_price = Column(Integer, default=0)
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -60,7 +60,7 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("orders.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, default=1)
-    price_at_time = Column(Integer)  # Price at order time
+    price_at_time = Column(Integer)
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
@@ -74,8 +74,8 @@ class Conversation(Base):
     platform = Column(String, nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id"))
     current_state = Column(String, default="IDLE")
-    context_data = Column(JSON, default=dict)  # Store extracted data during conversation
-    messages = Column(JSON, default=list)  # Message history
+    context_data = Column(JSON, default=dict)
+    messages = Column(JSON, default=list)
     last_message_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 

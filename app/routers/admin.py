@@ -38,7 +38,7 @@ def verify_admin_auth(request: Request):
 
 PAGE = """<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} - متجر أمين</title>
+<title>{title} - متجر فهد</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:'Segoe UI',Tahoma,sans-serif;background:#f5f5f5}}
@@ -71,7 +71,7 @@ select.form-control{{padding:10px}}
 .chart-container{{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px}}
 @media(max-width:768px){{.sidebar{{width:100%;height:auto;position:relative}}.main{{margin-right:0}}.stats{{grid-template-columns:1fr 1fr}}.grid-2{{grid-template-columns:1fr}}}}
 </style></head><body>
-<div class="sidebar"><h1>🛒 متجر أمين</h1>
+<div class="sidebar"><h1>🛒 متجر فهد</h1>
 <a href="/admin/" class="{s_dash}">الرئيسية</a>
 <a href="/admin/products" class="{s_prod}">المنتجات</a>
 <a href="/admin/orders" class="{s_ord}">الطلبات</a>

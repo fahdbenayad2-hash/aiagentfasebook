@@ -27,7 +27,7 @@ class NotificationService:
             "\U0001f464 \u0627\u0644\u0639\u0645\u064a\u0644: ", conversation_data.get('customer_name', '\u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641'),
             n, "\U0001f4f1 \u0627\u0644\u0645\u0646\u0635\u0629: ", conversation_data.get('platform', '\u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641'),
             n, "\U0001f4ac \u0622\u062e\u0631 \u0631\u0633\u0627\u0644\u0629: ", str(conversation_data.get('last_message', '\u0644\u0627 \u064a\u0648\u062c\u062f'))[:100],
-            n, "\U0001f517 <a href='", conversation_data.get('admin_url', '#'), "'>\u0641\u062a\u062d \u0627\u0644\u0645\u062d\u0627\u062f\u062b\u0629</a>"
+            n, "\U0001f4e9 \u0631\u062f \u0639\u0644\u064a\u0647 \u0628\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0631\u062f \u0647\u0646\u0627"
         ])
         async with httpx.AsyncClient() as client:
             response = await client.post(

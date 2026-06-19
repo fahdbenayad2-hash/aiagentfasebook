@@ -1,0 +1,22 @@
+{
+  "payment_methods": {
+    "darija": "Nqablu cash 3and al-livreur, ou CCP, ou BaridiMob.",
+    "french": "Nous acceptons le paiement à la livraison, CCP et BaridiMob."
+  },
+  "return_policy": {
+    "darija": "3andkum 48 sa3a bach traja3u al-munta3 ila kan 3anduh mushkila. Contactiw-na b'la takhkhur.",
+    "french": "Vous avez 48h pour nous signaler tout problème. Contactez-nous rapidement."
+  },
+  "delivery_info": {
+    "darija": "Nwasslu ghir fi ljazayer — 69 wilaya. Muddit tawsil 3 ila 7 ayam khidma.",
+    "french": "Nous livrons uniquement en Algérie — 69 wilayas. Délai de 3 à 7 jours ouvrables."
+  },
+  "store_hours": {
+    "darija": "Maftuhin min 9h sbah ila 21h lila, kull nhar ma3da l-jom3a.",
+    "french": "Ouvert de 9h à 21h, 7j/7 sauf vendredi."
+  },
+  "size_guide": {
+    "darija": "3andna S, M, L, XL, XXL. Itha hirti fi lqiyas, quliyna qiyasatik n3awnouk.",
+    "french": "Tailles disponibles: S, M, L, XL, XXL. Si vous hésitez, donnez-nous vos mesures."
+  }
+}
