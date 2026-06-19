@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     FB_PAGE_ACCESS_TOKEN: str = ""
     FB_VERIFY_TOKEN: str = "maria_verify_2026"
     FB_APP_SECRET: str = ""
+    FB_APP_ID: str = ""
+    FB_REDIRECT_URI: str = ""
+    FB_API_VERSION: str = "v18.0"
     # Facebook (legacy names - for backwards compat)
     FACEBOOK_PAGE_ACCESS_TOKEN: str = ""
     FACEBOOK_VERIFY_TOKEN: str = ""

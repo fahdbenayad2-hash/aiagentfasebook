@@ -38,6 +38,7 @@ async def verify_facebook_webhook(
 async def receive_facebook_webhook(request: Request):
     from app.config import settings
     from app.database import get_db
+    from app.models import PlatformAccount
     from fastapi import Depends
 
     body = await request.body()
@@ -48,16 +49,29 @@ async def receive_facebook_webhook(request: Request):
         for messaging in entry.get("messaging", []):
             if "message" in messaging:
                 sender_id = messaging["sender"]["id"]
+                recipient_id = messaging.get("recipient", {}).get("id", "")
                 message_text = sanitize_input(messaging["message"].get("text", ""))
                 if not message_text:
                     continue
 
                 db = next(get_db())
                 try:
+                    token = None
+                    if recipient_id:
+                        account = db.query(PlatformAccount).filter(
+                            PlatformAccount.page_id == recipient_id,
+                            PlatformAccount.active == True
+                        ).first()
+                        if account:
+                            token = account.access_token
+
+                    if not token:
+                        token = settings.FB_PAGE_ACCESS_TOKEN or settings.FACEBOOK_PAGE_ACCESS_TOKEN
+
                     result = await conversation_manager.process_incoming_message(
                         db, sender_id, "facebook", message_text
                     )
-                    await _send_messenger_message(sender_id, result["response"])
+                    await _send_messenger_message(sender_id, result["response"], token)
 
                     if result.get("needs_human"):
                         import asyncio
@@ -98,6 +112,7 @@ async def verify_instagram_webhook(
 async def receive_instagram_webhook(request: Request):
     from app.config import settings
     from app.database import get_db
+    from app.models import PlatformAccount
 
     body = await request.body()
     data = json.loads(body)
@@ -107,16 +122,29 @@ async def receive_instagram_webhook(request: Request):
         for messaging in entry.get("messaging", []):
             if "message" in messaging:
                 sender_id = messaging["sender"]["id"]
+                recipient_id = messaging.get("recipient", {}).get("id", "")
                 message_text = sanitize_input(messaging["message"].get("text", ""))
                 if not message_text:
                     continue
 
                 db = next(get_db())
                 try:
+                    token = None
+                    if recipient_id:
+                        account = db.query(PlatformAccount).filter(
+                            PlatformAccount.ig_id == recipient_id,
+                            PlatformAccount.active == True
+                        ).first()
+                        if account:
+                            token = account.access_token
+
+                    if not token:
+                        token = settings.FB_PAGE_ACCESS_TOKEN or settings.FACEBOOK_PAGE_ACCESS_TOKEN
+
                     result = await conversation_manager.process_incoming_message(
                         db, sender_id, "instagram", message_text
                     )
-                    await _send_messenger_message(sender_id, result["response"])
+                    await _send_messenger_message(sender_id, result["response"], token)
 
                     if result.get("needs_human"):
                         import asyncio
@@ -169,24 +197,26 @@ async def receive_telegram_webhook(request: Request):
         await _send_telegram_message(chat_id, "ماكاش تحويل نشط دابا. استنى حتى يطلب زبون التحويل لموظف بشري.")
         return {"status": "ok"}
 
-    await _send_messenger_message(psid, f"[موظف بشري] {text}")
+    await _send_messenger_message(psid, f"[موظف بشري] {text}", None)
     await _send_telegram_message(chat_id, "تم إرسال ردك للزبون ✅")
     logger.info(f"Staff reply forwarded to Facebook PSID {psid}")
     return {"status": "ok"}
 
 
-async def _send_messenger_message(recipient_id: str, message: str):
+async def _send_messenger_message(recipient_id: str, message: str, access_token: str = None):
     from app.config import settings
-    token = settings.FB_PAGE_ACCESS_TOKEN or settings.FACEBOOK_PAGE_ACCESS_TOKEN
+    token = access_token or settings.FB_PAGE_ACCESS_TOKEN or settings.FACEBOOK_PAGE_ACCESS_TOKEN
     if not token:
         logger.error("No Facebook access token configured")
         return
     url = f"https://graph.facebook.com/v18.0/me/messages?access_token={token}"
     async with httpx.AsyncClient() as client:
-        await client.post(url, json={
+        response = await client.post(url, json={
             "recipient": {"id": recipient_id},
             "message": {"text": message[:2000]}
         })
+        if response.status_code != 200:
+            logger.error(f"Send failed: {response.status_code} {response.text}")
 
 
 async def _send_telegram_message(chat_id: int, message: str):

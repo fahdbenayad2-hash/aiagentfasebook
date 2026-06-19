@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from app.database import engine, Base
 from app.routers import admin, health
 from app.routers.webhook import router as webhook_router
+from app.routers.meta_auth import router as auth_router
 from app.config import get_settings
 from app.services.logging_service import logger
 
@@ -34,6 +35,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(webhook_router)
+app.include_router(auth_router)
 app.include_router(admin.router)
 app.include_router(health.router)
 

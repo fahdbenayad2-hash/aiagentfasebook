@@ -80,3 +80,17 @@ class Conversation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     customer = relationship("Customer", back_populates="conversations")
+
+
+class PlatformAccount(Base):
+    __tablename__ = "platform_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    platform = Column(String, nullable=False)  # facebook, instagram
+    page_id = Column(String, index=True)
+    page_name = Column(String)
+    ig_id = Column(String, index=True, nullable=True)
+    access_token = Column(Text, nullable=False)
+    token_expires_at = Column(DateTime, nullable=True)
+    connected_at = Column(DateTime, default=datetime.utcnow)
+    active = Column(Boolean, default=True)

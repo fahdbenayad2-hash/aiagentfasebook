@@ -77,6 +77,7 @@ select.form-control{{padding:10px}}
 <a href="/admin/orders" class="{s_ord}">الطلبات</a>
 <a href="/admin/customers" class="{s_cust}">العملاء</a>
 <a href="/admin/conversations" class="{s_conv}">المحادثات</a>
+<a href="/admin/accounts" class="{s_acct}">الحسابات المتصلة</a>
 <hr style="border-color:#3949ab;margin:20px 0">
 <a href="/admin/orders/export">📥 تصدير CSV</a>
 </div>
@@ -91,7 +92,8 @@ def render_page(title: str, content: str, active: str = "") -> str:
         s_prod="active" if active == "products" else "",
         s_ord="active" if active == "orders" else "",
         s_cust="active" if active == "customers" else "",
-        s_conv="active" if active == "conversations" else ""
+        s_conv="active" if active == "conversations" else "",
+        s_acct="active" if active == "accounts" else "",
     )
 
 
@@ -417,3 +419,32 @@ async def export_orders(request: Request, db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=orders_export.csv"}
     )
+
+
+@router.get("/accounts")
+async def admin_accounts(request: Request, db: Session = Depends(get_db)):
+    verify_admin_auth(request)
+    from app.models import PlatformAccount
+    accounts = db.query(PlatformAccount).filter(PlatformAccount.active == True).all()
+
+    rows = ""
+    for acc in accounts:
+        platform_icon = "📘" if acc.platform == "facebook" else "📸"
+        ig_info = f"<br><small>📸 IG: {acc.ig_id}</small>" if acc.ig_id else ""
+        rows += f"""<tr>
+            <td>{platform_icon} {acc.page_name or acc.page_id}</td>
+            <td>{acc.page_id}</td>
+            <td>{acc.platform}{ig_info}</td>
+            <td><span class="badge badge-{acc.active and 'confirmed' or 'cancelled'}">{acc.active and "نشط" or "غير نشط"}</span></td>
+            <td>{acc.connected_at.strftime('%Y-%m-%d')}</td>
+        </tr>"""
+
+    ngrok_url = "https://vigorous-frequency-entryway.ngrok-free.dev"
+    content = f"""<h2 class="mb-20">🔗 الحسابات المتصلة</h2>
+<div class="card">
+    <p>اربط حساب فيسبوك أو إنستغرام عبر Meta OAuth. التوكن يخزن تلقائياً ويستعمل للرد.</p>
+    <a href="/auth/login" class="btn btn-success" style="margin-top:15px">🔗 ربط حساب فيسبوك/إنستغرام</a>
+</div>
+<h3 class="mb-20">الحسابات الحالية</h3>
+<table><thead><tr><th>الصفحة</th><th>Page ID</th><th>المنصة</th><th>الحالة</th><th>تاريخ الربط</th></tr></thead><tbody>{rows or '<tr><td colspan="5" style="text-align:center;color:#999">لا توجد حسابات مرتبطة بعد</td></tr>'}</tbody></table>"""
+    return HTMLResponse(content=render_page("الحسابات المتصلة", content, "accounts"))
