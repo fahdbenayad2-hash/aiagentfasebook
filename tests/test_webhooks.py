@@ -12,9 +12,9 @@ def test_facebook_verify_success(client):
     response = client.get(
         "/webhooks/facebook",
         params={
-            "hub_mode": "subscribe",
-            "hub_verify_token": settings.FB_VERIFY_TOKEN,
-            "hub_challenge": "123456789"
+            "hub.mode": "subscribe",
+            "hub.verify_token": settings.FB_VERIFY_TOKEN,
+            "hub.challenge": "123456789"
         }
     )
     assert response.status_code == 200
@@ -25,9 +25,9 @@ def test_facebook_verify_failure(client):
     response = client.get(
         "/webhooks/facebook",
         params={
-            "hub_mode": "subscribe",
-            "hub_verify_token": "wrong_token",
-            "hub_challenge": "123456789"
+            "hub.mode": "subscribe",
+            "hub.verify_token": "wrong_token",
+            "hub.challenge": "123456789"
         }
     )
     assert response.status_code == 403
@@ -37,9 +37,9 @@ def test_instagram_verify_success(client):
     response = client.get(
         "/webhooks/instagram",
         params={
-            "hub_mode": "subscribe",
-            "hub_verify_token": settings.FB_VERIFY_TOKEN,
-            "hub_challenge": "987654321"
+            "hub.mode": "subscribe",
+            "hub.verify_token": settings.FB_VERIFY_TOKEN,
+            "hub.challenge": "987654321"
         }
     )
     assert response.status_code == 200
@@ -50,9 +50,9 @@ def test_instagram_verify_failure(client):
     response = client.get(
         "/webhooks/instagram",
         params={
-            "hub_mode": "subscribe",
-            "hub_verify_token": "wrong",
-            "hub_challenge": "987654321"
+            "hub.mode": "subscribe",
+            "hub.verify_token": "wrong",
+            "hub.challenge": "987654321"
         }
     )
     assert response.status_code == 403

@@ -2,7 +2,7 @@ import json
 import hmac
 import hashlib
 import httpx
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 from app.services.conversation_manager import conversation_manager
 from app.services.notification_service import notification_service
@@ -22,9 +22,9 @@ def sanitize_input(text: str) -> str:
 
 @router.get("/facebook")
 async def verify_facebook_webhook(
-    hub_mode: str = None,
-    hub_verify_token: str = None,
-    hub_challenge: str = None
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
 ):
     from app.config import settings
     expected = settings.FB_VERIFY_TOKEN or settings.FACEBOOK_VERIFY_TOKEN
@@ -82,9 +82,9 @@ async def receive_facebook_webhook(request: Request):
 
 @router.get("/instagram")
 async def verify_instagram_webhook(
-    hub_mode: str = None,
-    hub_verify_token: str = None,
-    hub_challenge: str = None
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
 ):
     from app.config import settings
     expected = settings.FB_VERIFY_TOKEN or settings.FACEBOOK_VERIFY_TOKEN
