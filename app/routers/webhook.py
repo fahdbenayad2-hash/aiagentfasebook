@@ -110,59 +110,7 @@ async def verify_instagram_webhook(
 
 @router.post("/instagram")
 async def receive_instagram_webhook(request: Request):
-    from app.config import settings
-    from app.database import get_db
-    from app.models import PlatformAccount
-
-    body = await request.body()
-    data = json.loads(body)
-    logger.info(f"Received Instagram webhook with {len(data.get('entry', []))} entries")
-
-    for entry in data.get("entry", []):
-        for messaging in entry.get("messaging", []):
-            if "message" in messaging:
-                sender_id = messaging["sender"]["id"]
-                recipient_id = messaging.get("recipient", {}).get("id", "")
-                message_text = sanitize_input(messaging["message"].get("text", ""))
-                if not message_text:
-                    continue
-
-                db = next(get_db())
-                try:
-                    token = None
-                    if recipient_id:
-                        account = db.query(PlatformAccount).filter(
-                            PlatformAccount.ig_id == recipient_id,
-                            PlatformAccount.active == True
-                        ).first()
-                        if account:
-                            token = account.access_token
-
-                    if not token:
-                        token = settings.FB_PAGE_ACCESS_TOKEN or settings.FACEBOOK_PAGE_ACCESS_TOKEN
-
-                    result = await conversation_manager.process_incoming_message(
-                        db, sender_id, "instagram", message_text
-                    )
-                    await _send_messenger_message(sender_id, result["response"], token)
-
-                    if result.get("needs_human"):
-                        import asyncio
-                        from app.config import settings
-                        staff = int(settings.TELEGRAM_STAFF_CHAT_ID) if settings.TELEGRAM_STAFF_CHAT_ID else None
-                        if staff:
-                            _pending_handoffs[staff] = sender_id
-                        asyncio.ensure_future(
-                            notification_service.send_handoff_notification({
-                                "platform": "instagram",
-                                "last_message": message_text
-                            })
-                        )
-                except Exception as e:
-                    logger.error(f"Error processing Instagram message: {e}")
-                finally:
-                    db.close()
-
+    logger.info("Instagram webhook disabled — only Facebook Messenger is active")
     return {"status": "ok"}
 
 
