@@ -37,7 +37,8 @@ export default function AuthPage() {
         setTimeout(() => { setShowConfetti(false); setIsSignUp(false); }, 1500);
       } else {
         const { data } = await client.post('/api/auth/login', { email, password });
-        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('token', data.token);
+        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard');
       }
     } catch (err: any) {
