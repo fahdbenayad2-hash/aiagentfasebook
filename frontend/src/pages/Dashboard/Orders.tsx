@@ -141,7 +141,7 @@ export default function Orders() {
                   <td style={{ padding: '12px 14px' }}>{o.product}</td>
                   <td style={{ padding: '12px 14px' }}>{o.size}</td>
                   <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", fontWeight: 700 }}>{o.total.toLocaleString()} دج</td>
-                  <td style={{ padding: '12px 14px' }}><Badge color={statusColors[o.status] || 'muted'}>{o.status}</Badge></td>
+                  <td style={{ padding: '12px 14px' }}><Badge variant={o.status === 'مؤكد' ? 'green' : o.status === 'ملغي' ? 'red' : 'yellow'}>{o.status}</Badge></td>
                   <td style={{ padding: '12px 14px', color: 'var(--muted)', fontSize: '.78rem' }}>{o.date}</td>
                   <td style={{ padding: '12px 14px', display: 'flex', gap: 4 }}>
                     <Button size="sm" variant="gold" onClick={() => confirmOrder(o.id)}>تأكيد</Button>

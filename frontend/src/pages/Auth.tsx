@@ -1,238 +1,248 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import GeoBg from '../components/shared/GeoBg';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
+import { useState, FormEvent, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, Store, Eye, EyeOff, Check, X, LogIn, UserPlus, Sparkles } from 'lucide-react';
 import client from '../api/client';
-import { setToken, setUser } from '../hooks/useAuth';
+import ParticlesCanvas from '../animations/ParticlesCanvas';
 
-const PLANS = [
-  { id: 'starter', name: 'البداية', price: '2,500', replies: '5,000 رد' },
-  { id: 'growth', name: 'النمو', price: '6,000', replies: '15,000 رد', hot: true },
-  { id: 'enterprise', name: 'المتجر الكبير', price: '18,000', replies: '50,000 رد' },
-];
-
-export default function Auth() {
-  const nav = useNavigate();
-  const [tab, setTab] = useState<'login' | 'register'>('login');
-
-  return (
-    <GeoBg style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ position: 'absolute', top: 20, left: 24, display: 'flex', gap: 8, fontSize: '.8rem', color: 'var(--muted)', fontFamily: "'Cairo',sans-serif" }}>
-        <span style={{ color: 'var(--gold)' }}>AR</span> <span>|</span> <span>FR</span>
-      </div>
-
-      <Card style={{ maxWidth: 420, width: '100%', padding: '2rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-          <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '1.6rem', fontWeight: 900 }}>
-            MARIA <span style={{ color: 'var(--gold)' }}>✦</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 0, marginBottom: '1.75rem', background: 'var(--bg3)', borderRadius: 8, overflow: 'hidden' }}>
-          {(['login', 'register'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                flex: 1,
-                padding: '.65rem',
-                background: tab === t ? 'var(--gold)' : 'transparent',
-                color: tab === t ? 'var(--bg)' : 'var(--muted)',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '.9rem',
-                fontFamily: "'Cairo',sans-serif",
-                transition: 'all .2s',
-              }}
-            >
-              {t === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'login' ? <LoginForm onSuccess={() => nav('/dashboard')} /> : <RegisterForm onSuccess={() => nav('/dashboard')} />}
-
-        <div style={{ textAlign: 'center', fontSize: '.72rem', color: 'var(--faint)', marginTop: 16 }}>
-          بالنقر على متابعة، أنت توافق على <a href="#" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>شروط الاستخدام</a>
-        </div>
-      </Card>
-    </GeoBg>
-  );
-}
-
-function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+export default function AuthPage() {
+  const [searchParams] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(searchParams.get('signup') === '1');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
+  const navigate = useNavigate();
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const passwordValid = password.length >= 6;
+  const passwordsMatch = password === confirmPassword;
+  const canSubmit = isSignUp
+    ? emailValid && passwordValid && passwordsMatch && storeName.trim()
+    : emailValid && password.length > 0;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!canSubmit) return;
     setLoading(true);
     try {
-      const { data } = await client.post('/api/auth/login', { email, password });
-      setToken(data.token);
-      setUser(data.user);
-      onSuccess();
+      if (isSignUp) {
+        await client.post('/api/auth/register', { email, password, name: storeName.trim() });
+        setShowConfetti(true);
+        setTimeout(() => { setShowConfetti(false); setIsSignUp(false); }, 1500);
+      } else {
+        const { data } = await client.post('/api/auth/login', { email, password });
+        localStorage.setItem('token', data.access_token);
+        navigate('/dashboard');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
-    } finally {
-      setLoading(false);
+      setError(err?.response?.data?.detail || 'حدث خطأ. حاول مرة أخرى.');
     }
+    setLoading(false);
   };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <Input label="البريد الإلكتروني" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-      <div style={{ position: 'relative' }}>
-        <Input label="كلمة المرور" type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required error={error} />
-        <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', left: 12, top: 40, background: 'none', border: 'none', color: 'var(--muted)', fontSize: '.8rem', cursor: 'pointer' }}>
-          {showPw ? 'إخفاء' : 'إظهار'}
-        </button>
-      </div>
-      {error && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 8 }}>{error}</p>}
-      <Button type="submit" loading={loading} style={{ width: '100%', marginTop: 4 }}>تسجيل الدخول</Button>
-      <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <button type="button" style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '.82rem', cursor: 'pointer' }}>نسيت كلمة المرور؟</button>
-      </div>
-    </form>
-  );
-}
-
-function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
-  const [step, setStep] = useState<'form' | 'payment'>('form');
-  const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'satim' | 'baridimob'>('satim');
-  const [loading, setLoading] = useState(false);
-
-  const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!form.name) errs.name = 'الاسم مطلوب';
-    if (!/^(05|06|07|09)\d{8}$/.test(form.phone.replace(/\s/g, ''))) errs.phone = 'رقم هاتف غير صحيح (05/06/07/09 XXXXXXXX)';
-    if (!form.email.includes('@')) errs.email = 'بريد إلكتروني غير صحيح';
-    if (form.password.length < 6) errs.password = 'كلمة المرور 6 أحرف على الأقل';
-    if (!selectedPlan) errs.plan = 'اختر باقة';
-    return errs;
-  };
-
-  const passStrength = (pw: string) => {
-    if (pw.length < 6) return 'weak';
-    if (pw.length >= 8 && /[A-Z]/.test(pw) && /\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) return 'strong';
-    if (pw.length >= 6) return 'medium';
-    return 'weak';
-  };
-
-  const strength = passStrength(form.password);
-  const strengthColors = { weak: 'var(--danger)', medium: 'var(--gold)', strong: 'var(--success)' };
-
-  const handleRegister = async () => {
-    const errs = validate();
-    setErrors(errs);
-    if (Object.keys(errs).length) return;
-
-    setStep('payment');
-  };
-
-  const handlePayment = async () => {
-    if (paymentMethod !== 'satim') return;
+  const handleSendTest = async () => {
+    if (!emailValid || !passwordValid) return;
     setLoading(true);
     try {
-      const { data } = await client.post('/api/auth/register', { ...form, plan: selectedPlan });
-      const { data: payData } = await client.post('/api/payments/initiate-satim', {
-        amount: selectedPlan === 'starter' ? 2500 : selectedPlan === 'growth' ? 6000 : 18000,
-        pack_id: selectedPlan,
-        user_id: data.user.id,
-      });
-      window.location.href = payData.payment_url;
-    } catch (err: any) {
-      setErrors({ form: err.response?.data?.detail || 'فشل إنشاء الحساب' });
-      setLoading(false);
-    }
+      await client.post('/api/auth/register', { email, password, name: storeName.trim() || 'متجري' });
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 1500);
+    } catch {}
+    setLoading(false);
   };
-
-  if (step === 'payment') {
-    return (
-      <div>
-        <h3 style={{ textAlign: 'center', marginBottom: 16 }}>اختيار طريقة الدفع</h3>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <button onClick={() => setPaymentMethod('satim')} style={{ flex: 1, padding: '.7rem', borderRadius: 8, border: paymentMethod === 'satim' ? '1.5px solid var(--gold)' : '1px solid var(--border)', background: paymentMethod === 'satim' ? 'var(--gold-d)' : 'var(--bg3)', fontWeight: 700, color: 'var(--text)' }}>
-            CIB / Edahabia
-          </button>
-          <button onClick={() => setPaymentMethod('baridimob')} style={{ flex: 1, padding: '.7rem', borderRadius: 8, border: paymentMethod === 'baridimob' ? '1.5px solid var(--gold)' : '1px solid var(--border)', background: paymentMethod === 'baridimob' ? 'var(--gold-d)' : 'var(--bg3)', fontWeight: 700, color: 'var(--text)' }}>
-            Baridimob
-          </button>
-        </div>
-        {errors.form && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errors.form}</p>}
-        <Button onClick={handlePayment} loading={loading} style={{ width: '100%' }}>
-          {loading ? 'جاري تحضير الدفع...' : 'تأكيد الدفع'}
-        </Button>
-        <button onClick={() => setStep('form')} style={{ display: 'block', margin: '12px auto 0', background: 'none', border: 'none', color: 'var(--muted)', fontSize: '.82rem', cursor: 'pointer' }}>
-          رجع
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={e => { e.preventDefault(); handleRegister(); }}>
-      <Input label="الاسم الكامل" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} error={errors.name} required />
-      <Input label="رقم الهاتف" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="05XX XXXXXX" error={errors.phone} required />
-      <Input label="البريد الإلكتروني" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} error={errors.email} required />
-      <div style={{ position: 'relative' }}>
-        <Input label="كلمة المرور" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} error={errors.password} required />
-        {form.password && (
-          <div style={{ marginTop: -8, marginBottom: 12 }}>
-            <div style={{ display: 'flex', gap: 4, marginBottom: 2 }}>
-              {['ضعيفة', 'متوسطة', 'قوية'].map((lbl, i) => {
-                const levels = ['weak', 'medium', 'strong'];
-                const idx = levels.indexOf(strength);
-                return <div key={lbl} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= idx ? strengthColors[strength as keyof typeof strengthColors] : 'var(--border)' }} />;
-              })}
-            </div>
-            <span style={{ fontSize: '.72rem', color: strengthColors[strength as keyof typeof strengthColors] }}>
-              {strength === 'weak' ? 'ضعيفة' : strength === 'medium' ? 'متوسطة' : 'قوية'}
-            </span>
-          </div>
-        )}
-      </div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
+      <ParticlesCanvas count={35} />
 
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14, color: 'var(--muted)' }}>اختر باقة</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {PLANS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setSelectedPlan(p.id)}
+      {showConfetti && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'none', overflow: 'hidden' }}>
+          {Array.from({ length: 40 }).map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ x: Math.random() * window.innerWidth, y: -10, rotate: 0, opacity: 1 }}
+              animate={{ y: window.innerHeight + 10, rotate: Math.random() * 720, opacity: 0 }}
+              transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5 }}
               style={{
-                flex: 1,
-                padding: '.65rem .4rem',
-                borderRadius: 10,
-                border: `1.5px solid ${selectedPlan === p.id ? 'var(--gold)' : 'var(--border)'}`,
-                background: selectedPlan === p.id ? 'var(--gold-d)' : 'var(--bg3)',
-                textAlign: 'center',
-                cursor: 'pointer',
-                position: 'relative',
+                position: 'absolute', width: 8, height: 8,
+                background: ['var(--gold)', 'var(--gold-m)', '#fff'][i % 3],
+                borderRadius: i % 2 === 0 ? '50%' : '2px',
               }}
-            >
-              {p.hot && <span style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', background: 'var(--gold)', color: 'var(--bg)', fontSize: '.6rem', fontWeight: 700, padding: '.1rem .5rem', borderRadius: 100 }}>★</span>}
-              <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '.75rem', fontWeight: 700, marginBottom: 4 }}>{p.name}</div>
-              <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '1.1rem', fontWeight: 900, color: 'var(--gold)' }}>{p.price}<sub style={{ fontSize: '.65rem', fontWeight: 400, color: 'var(--muted)' }}>دج</sub></div>
-              <div style={{ fontSize: '.68rem', color: 'var(--muted)' }}>{p.replies}</div>
-              {selectedPlan === p.id && <div style={{ color: 'var(--gold)', fontSize: '.8rem', marginTop: 4 }}>✓</div>}
-            </button>
+            />
           ))}
         </div>
-        {errors.plan && <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: 4 }}>{errors.plan}</p>}
-      </div>
+      )}
 
-      <Button type="submit" style={{ width: '100%' }}>إنشاء حساب</Button>
-    </form>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          width: '100%', maxWidth: 440, padding: '2rem', position: 'relative', zIndex: 1,
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            style={{ fontFamily: "'Cairo',sans-serif", fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '.3rem' }}
+          >
+            فهد <span style={{ color: 'var(--gold)' }}>✦</span>
+          </motion.div>
+          <p style={{ color: 'var(--muted)', fontSize: '.85rem' }}>
+            {isSignUp ? 'أنشئ حسابك الجديد' : 'تسجيل الدخول إلى لوحة التحكم'}
+          </p>
+        </div>
+
+        <div style={{
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 20, padding: '2rem',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)', backdropFilter: 'blur(20px)',
+        }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: '1.5rem', background: 'var(--bg3)', borderRadius: 10, padding: 3 }}>
+            {[
+              { key: false, label: 'تسجيل الدخول', icon: <LogIn size={15} /> },
+              { key: true, label: 'إنشاء حساب', icon: <UserPlus size={15} /> },
+            ].map(tab => (
+              <button
+                key={String(tab.key)}
+                onClick={() => { setIsSignUp(tab.key); setError(''); }}
+                style={{
+                  flex: 1, padding: '.6rem', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  background: isSignUp === tab.key ? 'var(--gold-d)' : 'transparent',
+                  color: isSignUp === tab.key ? 'var(--gold)' : 'var(--muted)',
+                  fontWeight: 700, fontSize: '.85rem', fontFamily: "'Cairo',sans-serif",
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
+                  transition: 'all .25s',
+                }}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.form
+              key={isSignUp ? 'signup' : 'signin'}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              onSubmit={handleSubmit}
+            >
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: '.8rem', color: 'var(--muted)', marginBottom: 4 }}>البريد الإلكتروني</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--faint)', pointerEvents: 'none' }} />
+                  <input value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@store.dz" type="email"
+                    style={{
+                      width: '100%', padding: '12px 12px 12px 40px', borderRadius: 10, border: `1px solid ${email && !emailValid ? 'var(--danger)' : emailValid ? 'var(--b-gold)' : 'var(--border)'}`,
+                      background: 'var(--bg3)', color: 'var(--text)', fontSize: '.88rem', outline: 'none', transition: 'all .22s',
+                    }}
+                  />
+                  {email && (
+                    <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: emailValid ? 'var(--success)' : 'var(--danger)' }}>
+                      {emailValid ? <Check size={16} /> : <X size={16} />}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: '.8rem', color: 'var(--muted)', marginBottom: 4 }}>كلمة المرور</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--faint)', pointerEvents: 'none' }} />
+                  <input value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" type={showPassword ? 'text' : 'password'}
+                    style={{
+                      width: '100%', padding: '12px 40px 12px 36px', borderRadius: 10, border: `1px solid ${password && !passwordValid ? 'var(--danger)' : passwordValid ? 'var(--b-gold)' : 'var(--border)'}`,
+                      background: 'var(--bg3)', color: 'var(--text)', fontSize: '.88rem', outline: 'none', transition: 'all .22s',
+                    }}
+                  />
+                  <span onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}>
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </span>
+                  {password && (
+                    <span style={{ position: 'absolute', left: 36, top: '50%', transform: 'translateY(-50%)', color: passwordValid ? 'var(--success)' : 'var(--danger)' }}>
+                      {passwordValid ? <Check size={16} /> : <X size={16} />}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {isSignUp && (
+                <>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', fontSize: '.8rem', color: 'var(--muted)', marginBottom: 4 }}>تأكيد كلمة المرور</label>
+                    <div style={{ position: 'relative' }}>
+                      <Lock size={16} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--faint)', pointerEvents: 'none' }} />
+                      <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" type="password"
+                        style={{
+                          width: '100%', padding: '12px 40px 12px 36px', borderRadius: 10, border: `1px solid ${confirmPassword && !passwordsMatch ? 'var(--danger)' : confirmPassword && passwordsMatch ? 'var(--b-gold)' : 'var(--border)'}`,
+                          background: 'var(--bg3)', color: 'var(--text)', fontSize: '.88rem', outline: 'none', transition: 'all .22s',
+                        }}
+                      />
+                      {confirmPassword && (
+                        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: passwordsMatch ? 'var(--success)' : 'var(--danger)' }}>
+                          {passwordsMatch ? <Check size={16} /> : <X size={16} />}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', fontSize: '.8rem', color: 'var(--muted)', marginBottom: 4 }}>اسم المتجر</label>
+                    <div style={{ position: 'relative' }}>
+                      <Store size={16} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--faint)', pointerEvents: 'none' }} />
+                      <input value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="اسم متجرك" type="text"
+                        style={{
+                          width: '100%', padding: '12px 40px 12px 12px', borderRadius: 10, border: `1px solid ${storeName ? 'var(--b-gold)' : 'var(--border)'}`,
+                          background: 'var(--bg3)', color: 'var(--text)', fontSize: '.88rem', outline: 'none', transition: 'all .22s',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '.6rem .9rem', fontSize: '.82rem', color: 'var(--danger)', marginBottom: 14 }}>{error}</div>}
+
+              <button type="submit" disabled={!canSubmit || loading}
+                style={{
+                  width: '100%', padding: '.75rem', borderRadius: 10, border: 'none',
+                  background: canSubmit ? 'var(--gold)' : 'var(--faint)', color: canSubmit ? 'var(--bg)' : 'var(--muted)',
+                  fontFamily: "'Cairo',sans-serif", fontWeight: 700, fontSize: '.95rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
+                  cursor: canSubmit ? 'pointer' : 'not-allowed', transition: 'all .22s',
+                  boxShadow: canSubmit ? '0 4px 16px rgba(232,168,48,.2)' : 'none',
+                }}
+                onMouseEnter={e => { if (canSubmit) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(232,168,48,.3)'; } }}
+                onMouseLeave={e => { if (canSubmit) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,168,48,.2)'; } }}
+              >
+                {loading ? (
+                  <span style={{ width: 16, height: 16, border: '2px solid var(--bg)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .6s linear infinite', display: 'inline-block' }} />
+                ) : (
+                  <>{isSignUp ? 'إنشاء الحساب' : 'تسجيل الدخول'} <Sparkles size={16} /></>
+                )}
+              </button>
+            </motion.form>
+          </AnimatePresence>
+
+          {!isSignUp && (
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <a href="#" style={{ color: 'var(--muted)', fontSize: '.8rem', textDecoration: 'none' }}>نسيت كلمة المرور؟</a>
+            </div>
+          )}
+
+          <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '.72rem', color: 'var(--faint)', lineHeight: 1.6 }}>
+            بالنقر على متابعة، أنت توافق على <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>شروط الاستخدام</a>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }

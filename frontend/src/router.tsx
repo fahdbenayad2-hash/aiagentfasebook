@@ -1,33 +1,50 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Auth from './pages/Auth';
-import DashboardLayout from './components/layout/DashboardLayout';
-import DashboardHome from './pages/Dashboard/Home';
-import Conversations from './pages/Dashboard/Conversations';
-import Orders from './pages/Dashboard/Orders';
-import Products from './pages/Dashboard/Products';
-import Customers from './pages/Dashboard/Customers';
-import ConnectedAccounts from './pages/Dashboard/ConnectedAccounts';
-import Settings from './pages/Dashboard/Settings';
-import Demo from './pages/Demo';
+import { lazy, Suspense } from 'react';
+
+const AuthPage = lazy(() => import('./pages/Auth'));
+const LandingPage = lazy(() => import('./pages/Landing/LandingPage'));
+const DashboardLayout = lazy(() => import('./components/layout/DashboardLayout'));
+const DashboardHome = lazy(() => import('./pages/Dashboard/Home'));
+const Conversations = lazy(() => import('./pages/Dashboard/Conversations'));
+const Orders = lazy(() => import('./pages/Dashboard/Orders'));
+const Products = lazy(() => import('./pages/Dashboard/Products'));
+const Customers = lazy(() => import('./pages/Dashboard/Customers'));
+const ConnectedAccounts = lazy(() => import('./pages/Dashboard/ConnectedAccounts'));
+const Analytics = lazy(() => import('./pages/Dashboard/Analytics'));
+const Credits = lazy(() => import('./pages/Dashboard/Credits'));
+const Settings = lazy(() => import('./pages/Dashboard/Settings'));
+const Demo = lazy(() => import('./pages/Demo'));
+
+function Loader() {
+  return (
+    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid var(--gold)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
+    </div>
+  );
+}
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/demo" element={<Demo />} />
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardHome />} />
-          <Route path="conversations" element={<Conversations />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="products" element={<Products />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="connected-accounts" element={<ConnectedAccounts />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/auth" replace />} />
-      </Routes>
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/demo" element={<Demo />} />
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardHome />} />
+            <Route path="conversations" element={<Conversations />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="products" element={<Products />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="connected-accounts" element={<ConnectedAccounts />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="credits" element={<Credits />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

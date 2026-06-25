@@ -232,7 +232,7 @@ function LeftPanel({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '.75rem', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>{c.last_message}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Badge color={statusColors[c.status] || 'muted'}>{c.status}</Badge>
+                  <Badge variant="default">{c.status}</Badge>
                   {c.unread > 0 && (
                     <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--gold)', color: 'var(--bg)', fontSize: '.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {c.unread}

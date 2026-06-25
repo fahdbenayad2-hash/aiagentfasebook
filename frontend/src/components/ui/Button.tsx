@@ -1,6 +1,6 @@
 import { ButtonHTMLAttributes, ReactNode, CSSProperties } from 'react';
 
-type Variant = 'gold' | 'ghost' | 'outline' | 'danger';
+type Variant = 'gold' | 'ghost' | 'outline' | 'danger' | 'glass';
 type Size = 'sm' | 'md' | 'lg';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,7 @@ const styles: Record<Variant, CSSProperties> = {
   ghost: { background: 'transparent', color: 'var(--text)', fontWeight: 600, border: '1px solid var(--border)' },
   outline: { background: 'transparent', color: 'var(--text)', fontWeight: 700, border: '1px solid var(--border)' },
   danger: { background: 'var(--danger)', color: '#fff', fontWeight: 700, border: 'none' },
+  glass: { background: 'rgba(232,168,48,0.08)', color: 'var(--gold)', fontWeight: 700, border: '1px solid var(--b-gold)', backdropFilter: 'blur(12px)' },
 };
 
 const sizes: Record<Size, CSSProperties> = {
@@ -38,6 +39,10 @@ export default function Button({ variant = 'gold', size = 'md', loading, childre
         transition: 'all .22s',
         ...style,
       }}
+      onMouseEnter={e => { if (!disabled && !loading) { e.currentTarget.style.transform = 'translateY(-1px)'; if (variant === 'gold') e.currentTarget.style.boxShadow = '0 6px 20px rgba(232,168,48,.3)'; } }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
+      onMouseDown={e => { if (!disabled && !loading) e.currentTarget.style.transform = 'scale(0.97)'; }}
+      onMouseUp={e => { if (!disabled && !loading) e.currentTarget.style.transform = ''; }}
       disabled={disabled || loading}
       {...rest}
     >

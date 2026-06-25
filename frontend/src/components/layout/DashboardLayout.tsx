@@ -1,40 +1,19 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { isAuthenticated } from '../../hooks/useAuth';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Topbar from './Topbar';
-import GeoBg from '../shared/GeoBg';
-
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard': 'الرئيسية',
-  '/dashboard/conversations': 'المحادثات',
-  '/dashboard/orders': 'الطلبات',
-  '/dashboard/settings': 'الإعدادات',
-};
+import TopBar from './TopBar';
+import ToastContainer from '../ui/Toast';
 
 export default function DashboardLayout() {
-  const nav = useNavigate();
-  const loc = useLocation();
-
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      nav('/auth', { replace: true });
-    }
-  }, [nav]);
-
-  if (!isAuthenticated()) return null;
-
-  const title = PAGE_TITLES[loc.pathname] || 'لوحة التحكم';
-
   return (
-    <GeoBg style={{ minHeight: '100vh', paddingRight: 240 }}>
-      <Sidebar />
-      <div style={{ marginRight: 0 }}>
-        <Topbar pageTitle={title} />
-        <main style={{ padding: '1.75rem' }}>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <ToastContainer />
+      <main style={{ flex: 1, marginRight: 260, display: 'flex', flexDirection: 'column' }}>
+        <TopBar />
+        <div style={{ flex: 1, padding: '1.5rem', background: 'var(--bg)' }}>
           <Outlet />
-        </main>
-      </div>
-    </GeoBg>
+        </div>
+      </main>
+      <Sidebar />
+    </div>
   );
 }
