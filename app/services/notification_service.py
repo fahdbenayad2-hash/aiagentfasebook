@@ -101,6 +101,7 @@ async def send_telegram_notification(message: str, chat_id: Optional[str] = None
     if not chat_id:
         logger.error("No Telegram chat_id configured anywhere")
         return False
+    logger.info(f"Sending Telegram notification to chat_id={chat_id}")
     try:
         async with httpx.AsyncClient() as client:
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"

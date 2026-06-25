@@ -207,6 +207,11 @@ export default function Settings() {
           <Button onClick={saveNotifications}>حفظ الإعدادات</Button>
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
             <h4 style={{ fontSize: '.9rem', marginBottom: 12 }}>إشعارات تلجرام</h4>
+            <p style={{ fontSize: '.8rem', color: 'var(--muted)', marginBottom: 12, lineHeight: 1.6 }}>
+              1. افتح البوت <a href="https://t.me/language_buddy_doudi_bot" target="_blank" style={{ color: 'var(--gold)' }}>@language_buddy_doudi_bot</a> و ابعتلـه <code>/start</code><br />
+              2. افتح <a href="https://t.me/userinfobot" target="_blank" style={{ color: 'var(--gold)' }}>@userinfobot</a> و ابعتلـه <code>/start</code> — راح يردلك رقم شاتك<br />
+              3. انسخ الرقم (مثلاً 123456789) و حطه تحت
+            </p>
             <Input
               label="معرف شات تلجرام (Chat ID)"
               value={telegramChatId}
@@ -215,8 +220,8 @@ export default function Settings() {
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <Button size="sm" onClick={testTelegram} loading={testingTelegram}>إرسال اختبار</Button>
-              {testResult === 'ok' && <span style={{ color: 'var(--success)', fontSize: '.82rem', alignSelf: 'center' }}>✅ تم</span>}
-              {testResult === 'fail' && <span style={{ color: 'var(--danger)', fontSize: '.82rem', alignSelf: 'center' }}>❌ فشل</span>}
+              {testResult === 'ok' && <span style={{ color: 'var(--success)', fontSize: '.82rem', alignSelf: 'center' }}>✅ تم — تحقق من تلجرام</span>}
+              {testResult === 'fail' && <span style={{ color: 'var(--danger)', fontSize: '.82rem', alignSelf: 'center' }}>❌ فشل — تحقق من الرقم و انك بدأت البوت</span>}
             </div>
           </div>
         </Card>
