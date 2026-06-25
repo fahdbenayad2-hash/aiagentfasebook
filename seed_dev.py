@@ -1,7 +1,9 @@
 import hashlib
 import secrets
-from app.database import SessionLocal
+from app.database import engine, Base, SessionLocal
 from app.models import User
+
+Base.metadata.create_all(bind=engine)
 
 
 def hash_password(password: str) -> str:
