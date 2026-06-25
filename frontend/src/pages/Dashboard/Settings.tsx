@@ -64,6 +64,12 @@ export default function Settings() {
     setTestingTelegram(true);
     setTestResult(null);
     try {
+      await client.put('/api/settings/notifications', {
+        phone: notifPhone,
+        new_order: notifNewOrder,
+        handoff: notifHandoff,
+        telegram_chat_id: telegramChatId,
+      });
       const { data } = await client.post('/api/settings/notifications/test');
       setTestResult(data.success ? 'ok' : 'fail');
     } catch {
