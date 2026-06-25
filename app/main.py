@@ -81,7 +81,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error"}
     )
 
-app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+assets_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist" / "assets"
+if assets_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
 @app.get("/")
 async def root():
