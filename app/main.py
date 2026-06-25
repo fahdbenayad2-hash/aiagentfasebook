@@ -4,11 +4,15 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import asyncio
+import os
+from pathlib import Path
 from contextlib import asynccontextmanager
-from app.database import engine, Base
+from app.database import engine, Base, run_migration
 from app.routers import admin, health
+from app.routers.auth import router as auth_router
 from app.routers.webhook import router as webhook_router
-from app.routers.meta_auth import router as auth_router
+from app.routers.api import router as api_router
 from app.config import get_settings
 from app.services.logging_service import logger
 
@@ -20,7 +24,23 @@ limiter = Limiter(key_func=get_remote_address)
 async def lifespan(app: FastAPI):
     logger.info("Starting AI Agent Shop - فهد")
     Base.metadata.create_all(bind=engine)
+    run_migration()
+
+    async def _token_health_loop():
+        while True:
+            try:
+                from app.services.facebook_oauth import daily_token_health_check
+                await daily_token_health_check()
+            except Exception as e:
+                logger.error(f"Token health check error: {e}")
+            await asyncio.sleep(86400)
+
+    task = asyncio.create_task(_token_health_loop())
+    logger.info("Token health monitoring started (runs every 24h)")
+
     yield
+
+    task.cancel()
     logger.info("Shutting down AI Agent Shop - فهد")
 
 app = FastAPI(
@@ -36,6 +56,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(webhook_router)
 app.include_router(auth_router)
+app.include_router(api_router)
 app.include_router(admin.router)
 app.include_router(health.router)
 
@@ -47,8 +68,14 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error"}
     )
 
+app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+
 @app.get("/")
 async def root():
+    from fastapi.responses import FileResponse
+    index_path = Path(__file__).resolve().parent.parent / "frontend" / "dist" / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
     return {
         "message": "مرحباً بك في نظام فهد للرد الآلي",
         "version": "2.0.0",
@@ -93,3 +120,15 @@ async def data_deletion(request: Request):
         "url": "/data-deletion",
         "confirmation_code": psid or "unknown"
     }
+
+
+@app.get("/{path:path}")
+async def spa_fallback(path: str):
+    from fastapi.responses import FileResponse
+    api_prefixes = ("api/", "admin/", "webhooks/")
+    if path.startswith(api_prefixes) or "." in path or path in ("docs", "openapi.json", "redoc", "privacy", "terms", "data-deletion"):
+        raise HTTPException(status_code=404)
+    index_path = Path(__file__).resolve().parent.parent / "frontend" / "dist" / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path), media_type="text/html")
+    raise HTTPException(status_code=404)

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     FB_APP_ID: str = ""
     FB_REDIRECT_URI: str = ""
     FB_API_VERSION: str = "v18.0"
+    TOKEN_ENCRYPTION_KEY: str = ""
     # Facebook (legacy names - for backwards compat)
     FACEBOOK_PAGE_ACCESS_TOKEN: str = ""
     FACEBOOK_VERIFY_TOKEN: str = ""
@@ -18,11 +19,12 @@ class Settings(BaseSettings):
     # Groq
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_FALLBACK_MODEL: str = "llama-3.1-8b-instant"
     GROQ_MODEL_MAIN: str = "llama-3.3-70b-versatile"
     GROQ_MODEL_CLASSIFIER: str = "llama3-8b-8192"
     GROQ_MAX_TOKENS: int = 512
     GROQ_TEMPERATURE: float = 0.3
-    GROQ_MAX_RETRIES: int = 3
+    GROQ_MAX_RETRIES: int = 2
     GROQ_RETRY_DELAY: float = 1.0
 
     # Session
@@ -37,11 +39,15 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_ADMIN_CHAT_ID: str = ""
     TELEGRAM_STAFF_CHAT_ID: str = ""
+    TELEGRAM_ADMIN_CHAT_IDS: str = ""
 
     # Feature Flags
     MARIA_ENABLED: bool = True
     MARIA_MAX_MESSAGES_PER_SESSION: int = 50
     MARIA_COOLDOWN_AFTER_ESCALATION_MINUTES: int = 60
+
+    # Auth
+    APP_SECRET_KEY: str = "change-me-in-production"
 
     # Admin
     ADMIN_USERNAME: str = "admin"

@@ -1,16 +1,12 @@
 from typing import Optional, Any
 import json
-import groq
 
 from app.agents.intents import CustomerIntent
 from app.agents.prompts.maria_system import MARIA_SYSTEM_PROMPT
 from app.models.session import ConversationState
 from app.config import settings
 from app.services.logging_service import logger
-from app.core.metrics import groq_tokens_used_total
-
-
-_CLIENT = None
+from app.services.groq_client import call_groq_json
 
 
 TOOL_DESCRIPTIONS = {
@@ -21,21 +17,12 @@ TOOL_DESCRIPTIONS = {
 }
 
 
-def _get_client():
-    global _CLIENT
-    if _CLIENT is None:
-        _CLIENT = groq.AsyncGroq(api_key=settings.GROQ_API_KEY)
-    return _CLIENT
-
-
 async def generate_reply(
     message: str,
     state: ConversationState,
     intent: CustomerIntent,
     tool_result: Optional[Any] = None
 ) -> str:
-    client = _get_client()
-
     available_tools = []
     if intent in (CustomerIntent.ORDER_STATUS, CustomerIntent.ORDER_CANCEL):
         available_tools.append(f"order_lookup: {TOOL_DESCRIPTIONS['order_lookup']}")
@@ -55,27 +42,33 @@ async def generate_reply(
     messages = [{"role": "system", "content": system_prompt}]
 
     if tool_result:
+        try:
+            serialized = json.dumps(tool_result, ensure_ascii=False)
+        except (TypeError, ValueError):
+            if hasattr(tool_result, "to_dict"):
+                serialized = json.dumps(tool_result.to_dict(), ensure_ascii=False)
+            elif isinstance(tool_result, list):
+                serialized = json.dumps(
+                    [t.to_dict() if hasattr(t, "to_dict") else str(t) for t in tool_result],
+                    ensure_ascii=False
+                )
+            else:
+                serialized = str(tool_result)
         messages.append({
             "role": "system",
-            "content": f"Tool result: {json.dumps(tool_result, ensure_ascii=False)}"
+            "content": f"Tool result: {serialized}"
         })
 
     messages.extend(state.to_groq_messages()[-5:])
     messages.append({"role": "user", "content": message})
 
     try:
-        response = await client.chat.completions.create(
-            model=settings.GROQ_MODEL or "mixtral-8x7b-32768",
+        text = await call_groq_json(
             messages=messages,
-            response_format={"type": "json_object"},
+            model=settings.GROQ_MODEL or settings.GROQ_FALLBACK_MODEL,
             temperature=0.7,
             max_tokens=300
         )
-        groq_tokens_used_total.labels(model=settings.GROQ_MODEL).inc(
-            response.usage.total_tokens if response.usage else 0
-        )
-
-        text = response.choices[0].message.content
         data = json.loads(text)
         reply = data.get("message") or data.get("text") or data.get("reply") or text
 
@@ -88,4 +81,4 @@ async def generate_reply(
         return "سمعتك! كيفاش نقدر نعاونك؟ 😊"
     except Exception as e:
         logger.error(f"Maria reply generation failed: {e}")
-        return "عفواً، واجهت مشكلة تقنية. جرب مرة أخرى 🙏"
+        return "سمحيلي، صابني مشكل تقني. حاولي مرة أخرى 🙏"

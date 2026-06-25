@@ -10,6 +10,29 @@ class Message(BaseModel):
     intent: Optional[str] = None
 
 
+class OrderDraft(BaseModel):
+    product_id: Optional[int] = None
+    product_name: Optional[str] = None
+    size: Optional[str] = None
+    color: Optional[str] = None
+    quantity: Optional[int] = None
+    customer_name: Optional[str] = None
+    phone: Optional[str] = None
+    wilaya: Optional[str] = None
+    address: Optional[str] = None
+
+
+class OrderStep(str):
+    SIZE = "SIZE"
+    COLOR = "COLOR"
+    QUANTITY = "QUANTITY"
+    NAME = "NAME"
+    PHONE = "PHONE"
+    WILAYA = "WILAYA"
+    ADDRESS = "ADDRESS"
+    CONFIRM = "CONFIRM"
+
+
 class ConversationState(BaseModel):
     sender_id: str
     page_id: str
@@ -19,6 +42,8 @@ class ConversationState(BaseModel):
     escalation_requested: bool = False
     language_preference: str = "darija"
     order_id_mentioned: Optional[str] = None
+    order_draft: Optional[OrderDraft] = None
+    order_step: Optional[str] = None
     created_at: Optional[datetime] = None
     last_active: Optional[datetime] = None
 

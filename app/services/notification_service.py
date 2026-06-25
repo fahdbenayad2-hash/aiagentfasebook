@@ -1,5 +1,6 @@
 import httpx
 from app.config import get_settings
+from app.services.logging_service import logger
 
 settings = get_settings()
 
@@ -8,33 +9,51 @@ class NotificationService:
     def __init__(self):
         self.bot_token = settings.TELEGRAM_BOT_TOKEN
         self.chat_id = settings.TELEGRAM_STAFF_CHAT_ID
-        self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
+        if self.bot_token:
+            self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
+        else:
+            self.base_url = ""
+            logger.error("TELEGRAM_BOT_TOKEN is empty — notifications disabled")
 
     async def send_order_notification(self, order_data: dict) -> bool:
-        message = self._format_order_message(order_data)
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base_url}/sendMessage",
-                json={"chat_id": self.chat_id, "text": message, "parse_mode": "HTML"}
-            )
-            return response.status_code == 200
+        if not self.bot_token:
+            logger.error("Telegram not configured, skipping order notification")
+            return False
+        try:
+            message = self._format_order_message(order_data)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.base_url}/sendMessage",
+                    json={"chat_id": self.chat_id, "text": message, "parse_mode": "HTML"}
+                )
+                return response.status_code == 200
+        except Exception as e:
+            logger.error(f"Failed to send order notification: {e}")
+            return False
 
     async def send_handoff_notification(self, conversation_data: dict) -> bool:
-        n = "\n"
-        message = "".join([
-            "\U0001f6a8 <b>\u0637\u0644\u0628 \u062a\u062d\u0648\u064a\u0644 \u0644\u0645\u0648\u0638\u0641 \u0628\u0634\u0631\u064a</b>",
-            n, "\u2501" * 14, n,
-            "\U0001f464 \u0627\u0644\u0639\u0645\u064a\u0644: ", conversation_data.get('customer_name', '\u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641'),
-            n, "\U0001f4f1 \u0627\u0644\u0645\u0646\u0635\u0629: ", conversation_data.get('platform', '\u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641'),
-            n, "\U0001f4ac \u0622\u062e\u0631 \u0631\u0633\u0627\u0644\u0629: ", str(conversation_data.get('last_message', '\u0644\u0627 \u064a\u0648\u062c\u062f'))[:100],
-            n, "\U0001f4e9 \u0631\u062f \u0639\u0644\u064a\u0647 \u0628\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0631\u062f \u0647\u0646\u0627"
-        ])
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base_url}/sendMessage",
-                json={"chat_id": self.chat_id, "text": message, "parse_mode": "HTML"}
-            )
-            return response.status_code == 200
+        if not self.bot_token:
+            logger.error("Telegram not configured, skipping handoff notification")
+            return False
+        try:
+            n = "\n"
+            message = "".join([
+                "\U0001f6a8 <b>\u0637\u0644\u0628 \u062a\u062d\u0648\u064a\u0644 \u0644\u0645\u0648\u0638\u0641 \u0628\u0634\u0631\u064a</b>",
+                n, "\u2501" * 14, n,
+                "\U0001f464 \u0627\u0644\u0639\u0645\u064a\u0644: ", conversation_data.get('customer_name', '\u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641'),
+                n, "\U0001f4f1 \u0627\u0644\u0645\u0646\u0635\u0629: ", conversation_data.get('platform', '\u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641'),
+                n, "\U0001f4ac \u0622\u062e\u0631 \u0631\u0633\u0627\u0644\u0629: ", str(conversation_data.get('last_message', '\u0644\u0627 \u064a\u0648\u062c\u062f'))[:100],
+                n, "\U0001f4e9 \u0631\u062f \u0639\u0644\u064a\u0647 \u0628\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0631\u062f \u0647\u0646\u0627"
+            ])
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.base_url}/sendMessage",
+                    json={"chat_id": self.chat_id, "text": message, "parse_mode": "HTML"}
+                )
+                return response.status_code == 200
+        except Exception as e:
+            logger.error(f"Failed to send handoff notification: {e}")
+            return False
 
     def _format_order_message(self, order_data: dict) -> str:
         n = "\n"
@@ -59,3 +78,24 @@ class NotificationService:
 
 
 notification_service = NotificationService()
+
+
+async def send_telegram_notification(message: str) -> bool:
+    if not settings.TELEGRAM_BOT_TOKEN:
+        logger.error("TELEGRAM_BOT_TOKEN not configured")
+        return False
+    try:
+        async with httpx.AsyncClient() as client:
+            url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+            response = await client.post(
+                url,
+                json={
+                    "chat_id": settings.TELEGRAM_STAFF_CHAT_ID,
+                    "text": message,
+                    "parse_mode": "HTML"
+                }
+            )
+            return response.status_code == 200
+    except Exception as e:
+        logger.error(f"send_telegram_notification failed: {e}")
+        return False

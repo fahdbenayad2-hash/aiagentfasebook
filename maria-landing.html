@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مريم — وكيلة مبيعاتك الذكية على الميسنجر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #07080D;
+  --bg2:      #0D1018;
+  --bg3:      #13171F;
+  --gold:     #E8A830;
+  --gold-d:   rgba(232,168,48,.12);
+  --gold-m:   rgba(232,168,48,.35);
+  --terra:    #B84A2B;
+  --text:     #EDE9E0;
+  --muted:    #7B8190;
+  --faint:    #3A3F4A;
+  --border:   rgba(255,255,255,.07);
+  --b-gold:   rgba(232,168,48,.25);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Tajawal',sans-serif;font-size:16px;line-height:1.7;direction:rtl;
+}
+h1,h2,h3,h4{font-family:'Cairo',sans-serif}
+
+/* ── GEO PATTERN ── */
+.geo{
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(232,168,48,.055) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23E8A830' stroke-width='.6' opacity='.1'%3E%3Cpath d='M40 8 L72 40 L40 72 L8 40 Z'/%3E%3Cpath d='M40 22 L58 40 L40 58 L22 40 Z'/%3E%3Cline x1='40' y1='8' x2='40' y2='72'/%3E%3Cline x1='8' y1='40' x2='72' y2='40'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;right:0;left:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 4rem;
+  background:rgba(7,8,13,.82);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  font-family:'Cairo',sans-serif;font-size:1.4rem;font-weight:900;
+  color:var(--text);text-decoration:none;letter-spacing:-.01em;
+}
+.logo em{color:var(--gold);font-style:normal}
+nav ul{display:flex;list-style:none;gap:2rem}
+nav ul a{color:var(--muted);text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;transition:color .2s}
+nav ul a:hover{color:var(--text)}
+.nav-cta{
+  background:var(--gold)!important;color:var(--bg)!important;
+  padding:.45rem 1.25rem;border-radius:6px;font-weight:700!important;
+}
+
+/* ── HERO ── */
+#hero{
+  min-height:100vh;display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;gap:4rem;padding:8rem 4rem 4rem;
+  position:relative;overflow:hidden;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--gold-d);border:1px solid var(--b-gold);
+  padding:.3rem 1rem;border-radius:100px;font-size:.78rem;
+  color:var(--gold);font-family:'Cairo',sans-serif;margin-bottom:1.5rem;
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+.hero-h{
+  font-size:clamp(2.8rem,5.5vw,4.5rem);font-weight:900;
+  line-height:1.12;margin-bottom:1rem;letter-spacing:-.025em;
+}
+.hero-h em{color:var(--gold);font-style:normal}
+.hero-sub{font-size:1.05rem;color:var(--muted);margin-bottom:2.5rem;max-width:460px;line-height:1.85}
+.hero-btns{display:flex;gap:.9rem;flex-wrap:wrap}
+
+.btn-gold{
+  background:var(--gold);color:var(--bg);
+  padding:.85rem 2rem;border-radius:8px;
+  font-family:'Cairo',sans-serif;font-weight:700;font-size:.95rem;
+  border:none;cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:.4rem;transition:all .22s;
+}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,168,48,.3)}
+.btn-ghost{
+  background:transparent;color:var(--text);
+  padding:.85rem 2rem;border-radius:8px;
+  font-family:'Cairo',sans-serif;font-weight:600;font-size:.95rem;
+  border:1px solid var(--border);cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:.4rem;transition:all .22s;
+}
+.btn-ghost:hover{border-color:var(--gold-m);color:var(--gold)}
+
+/* ── PHONE ── */
+.hero-vis{display:flex;justify-content:center}
+.phone{
+  width:290px;background:var(--bg2);border-radius:38px;
+  border:1.5px solid var(--border);
+  box-shadow:0 40px 90px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.04);
+  overflow:hidden;
+}
+.p-header{
+  background:#1877F2;padding:.9rem 1.1rem;
+  display:flex;align-items:center;gap:.65rem;
+}
+.avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold),var(--terra));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:1rem;color:#fff;
+}
+.p-name{font-weight:700;font-size:.85rem;color:#fff;font-family:'Cairo',sans-serif}
+.p-status{font-size:.68rem;color:rgba(255,255,255,.65)}
+.chat-body{
+  padding:.9rem;min-height:360px;background:#f0f2f5;
+  display:flex;flex-direction:column;gap:.65rem;
+}
+.bubble{
+  max-width:88%;padding:.55rem .85rem;border-radius:16px;
+  font-size:.78rem;line-height:1.5;font-family:'Tajawal',sans-serif;
+  white-space:pre-line;
+  opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s;
+}
+.bubble.show{opacity:1;transform:none}
+.b-in{background:#fff;color:#111;align-self:flex-start;border-radius:16px 16px 16px 3px}
+.b-out{background:#1877F2;color:#fff;align-self:flex-end;border-radius:16px 16px 3px 16px;text-align:right}
+.typing{
+  display:flex;gap:4px;align-items:center;padding:.55rem .85rem;
+  background:#fff;border-radius:16px 16px 16px 3px;width:fit-content;
+  opacity:0;transition:opacity .3s;
+}
+.td{width:6px;height:6px;border-radius:50%;background:#bbb;animation:td 1.2s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.p-input{
+  padding:.65rem .9rem;background:#fff;
+  display:flex;align-items:center;gap:.5rem;border-top:1px solid #e5e7eb;
+}
+.fake-input{
+  flex:1;background:#f0f2f5;border-radius:18px;
+  padding:.35rem .9rem;font-size:.72rem;color:#9ca3af;font-family:'Tajawal',sans-serif;
+}
+
+/* ── STATS ── */
+#stats{
+  padding:1.8rem 4rem;
+  background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;max-width:860px;margin:0 auto;text-align:center}
+.s-num{font-family:'Cairo',sans-serif;font-size:2.4rem;font-weight:900;color:var(--gold);line-height:1}
+.s-lbl{font-size:.82rem;color:var(--muted);margin-top:.2rem}
+
+/* ── SECTION SHARED ── */
+section{padding:5rem 4rem}
+.sec-head{text-align:center;margin-bottom:3.5rem}
+.eyebrow{
+  font-family:'Cairo',sans-serif;font-size:.75rem;font-weight:700;
+  color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:.9rem;
+}
+.sec-title{font-size:clamp(1.75rem,2.8vw,2.4rem);font-weight:800;line-height:1.25;margin-bottom:.85rem}
+.sec-sub{color:var(--muted);max-width:520px;margin:0 auto;font-size:.95rem}
+
+/* ── DIVIDER ── */
+.rule{
+  display:flex;align-items:center;justify-content:center;gap:.75rem;
+  margin-bottom:2rem;
+}
+.rule::before,.rule::after{content:'';display:block;width:50px;height:1px;background:linear-gradient(to left,transparent,var(--gold-m))}
+.rule::after{background:linear-gradient(to right,transparent,var(--gold-m))}
+.rule-diamond{color:var(--gold);font-size:.65rem}
+
+/* ── FEATURES ── */
+#features{background:var(--bg)}
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;max-width:860px;margin:0 auto}
+.feat-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:1.75rem;position:relative;overflow:hidden;transition:all .28s;
+}
+.feat-card::after{
+  content:'';position:absolute;top:0;right:0;width:70px;height:70px;
+  background:var(--gold-d);border-radius:0 16px 0 100%;
+}
+.feat-card:hover{border-color:var(--b-gold);transform:translateY(-3px)}
+.feat-icon{font-size:1.9rem;margin-bottom:.85rem}
+.feat-title{font-family:'Cairo',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:.6rem}
+.feat-desc{color:var(--muted);font-size:.88rem;line-height:1.75}
+.badge{
+  display:inline-block;background:rgba(184,74,43,.15);border:1px solid rgba(184,74,43,.3);
+  color:#E86A48;font-size:.7rem;padding:.15rem .6rem;border-radius:100px;
+  font-family:'Cairo',sans-serif;font-weight:700;margin-top:.5rem;
+}
+
+/* ── HOW IT WORKS ── */
+#how{background:var(--bg3)}
+.steps{max-width:660px;margin:0 auto}
+.step{display:grid;grid-template-columns:auto 1fr;gap:1.75rem;position:relative;margin-bottom:2.75rem}
+.step:last-child{margin-bottom:0}
+.step:not(:last-child)::after{
+  content:'';position:absolute;right:23px;top:50px;
+  width:1px;height:calc(100% - 20px);
+  background:linear-gradient(to bottom,var(--b-gold),transparent);
+}
+.step-num{
+  width:46px;height:46px;border-radius:50%;
+  background:var(--gold-d);border:1.5px solid var(--b-gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cairo',sans-serif;font-size:1.05rem;font-weight:800;
+  color:var(--gold);flex-shrink:0;
+}
+.step-body{padding-top:.5rem}
+.step-title{font-family:'Cairo',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:.45rem}
+.step-desc{color:var(--muted);font-size:.88rem;line-height:1.75}
+
+/* ── PRICING ── */
+#pricing{background:var(--bg)}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:940px;margin:0 auto}
+.price-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:20px;
+  padding:1.75rem;position:relative;transition:all .28s;
+}
+.price-card:hover{border-color:var(--b-gold)}
+.price-card.hot{
+  border-color:var(--gold);
+  background:linear-gradient(150deg,var(--bg3) 0%,#120F00 100%);
+}
+.hot-badge{
+  position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:var(--bg);font-family:'Cairo',sans-serif;
+  font-size:.7rem;font-weight:700;padding:.2rem .9rem;border-radius:100px;
+}
+.p-name{font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;color:var(--muted);margin-bottom:.75rem}
+.p-price{font-family:'Cairo',sans-serif;font-size:2.4rem;font-weight:900;line-height:1}
+.p-price sub{font-size:1rem;font-weight:400;color:var(--muted)}
+.p-unit{font-size:.82rem;color:var(--muted);margin:.4rem 0 1.25rem}
+.p-feats{list-style:none;display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem}
+.p-feats li{font-size:.85rem;display:flex;align-items:flex-start;gap:.5rem}
+.p-feats li::before{content:'◆';color:var(--gold);font-size:.55rem;margin-top:.35rem;flex-shrink:0}
+.btn-outline{
+  width:100%;background:transparent;color:var(--text);
+  padding:.7rem;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;
+  font-size:.9rem;border:1px solid var(--border);cursor:pointer;transition:all .2s;
+}
+.btn-outline:hover{border-color:var(--gold-m)}
+.btn-g{
+  width:100%;background:var(--gold);color:var(--bg);
+  padding:.7rem;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;
+  font-size:.9rem;border:none;cursor:pointer;transition:all .2s;
+}
+.btn-g:hover{opacity:.88}
+.vat{font-size:.7rem;color:var(--faint);margin-top:.5rem}
+
+/* ── FAQ ── */
+#faq{background:var(--bg2)}
+.faq-wrap{max-width:660px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{
+  width:100%;background:none;border:none;color:var(--text);
+  font-family:'Cairo',sans-serif;font-size:.95rem;font-weight:600;
+  text-align:right;padding:1.1rem 0;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+}
+.chev{color:var(--gold);font-size:.9rem;transition:transform .3s;flex-shrink:0}
+.faq-item.open .chev{transform:rotate(180deg)}
+.faq-a{
+  color:var(--muted);font-size:.88rem;line-height:1.85;
+  max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s;
+}
+.faq-item.open .faq-a{max-height:250px;padding-bottom:1.1rem}
+
+/* ── CTA ── */
+#cta{background:var(--bg);padding:6rem 4rem}
+.cta-wrap{
+  max-width:660px;margin:0 auto;text-align:center;
+  background:linear-gradient(140deg,var(--bg2) 0%,#110E00 100%);
+  border:1px solid var(--b-gold);border-radius:24px;padding:3.5rem;
+  position:relative;overflow:hidden;
+}
+.cta-geo{
+  position:absolute;inset:0;opacity:.06;
+  background:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23E8A830' stroke-width='.8'%3E%3Cpath d='M40 8 L72 40 L40 72 L8 40 Z'/%3E%3Cpath d='M40 22 L58 40 L40 58 L22 40 Z'/%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;
+}
+.cta-title{font-size:clamp(1.6rem,2.5vw,2.1rem);font-weight:800;margin-bottom:.9rem}
+.cta-sub{color:var(--muted);margin-bottom:2rem;font-size:.95rem}
+.cta-note{font-size:.75rem;color:var(--faint);margin-top:.9rem}
+
+/* ── FOOTER ── */
+footer{
+  padding:1.75rem 4rem;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.foot-links{display:flex;gap:1.75rem;list-style:none}
+.foot-links a{color:var(--muted);text-decoration:none;font-size:.82rem;transition:color .2s}
+.foot-links a:hover{color:var(--text)}
+.foot-copy{font-size:.75rem;color:var(--faint)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  nav{padding:.9rem 1.5rem}
+  nav ul{display:none}
+  #hero{grid-template-columns:1fr;padding:6rem 1.5rem 2.5rem;text-align:center}
+  .hero-sub{margin:0 auto 2rem}
+  .hero-btns{justify-content:center}
+  .hero-vis{order:-1;margin-bottom:1.5rem}
+  section{padding:3rem 1.5rem}
+  #stats{padding:1.75rem 1.5rem}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .feat-grid,.price-grid{grid-template-columns:1fr}
+  #cta{padding:3rem 1.5rem}
+  .cta-wrap{padding:2.5rem 1.5rem}
+  footer{flex-direction:column;gap:1rem;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="logo">مريم <em>✦</em></a>
+  <ul>
+    <li><a href="#features">المميزات</a></li>
+    <li><a href="#how">كيفاش تخدم</a></li>
+    <li><a href="#pricing">الأسعار</a></li>
+    <li><a href="#faq">الأسئلة</a></li>
+    <li><a href="#cta" class="nav-cta">ابدأ مجاناً</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero" class="geo">
+  <div>
+    <div class="hero-tag"><div class="pulse"></div>وكيلة مبيعات تفهم الدارجة الجزائرية</div>
+    <h1 class="hero-h">تفهم. تردّ.<br><em>تبيع.</em></h1>
+    <p class="hero-sub">مريم وكيلة مبيعات ذكية على الميسنجر — ترد على زبائنك 24/7 بالدارجة، تسجّل الطلبات، وتحوّل الزائر لزبون بدون ما تنت موجود.</p>
+    <div class="hero-btns">
+      <a href="#cta" class="btn-gold">ابدأ تجربتك المجانية ←</a>
+      <a href="#how" class="btn-ghost">▶ شوف كيفاش تخدم</a>
+    </div>
+  </div>
+
+  <div class="hero-vis">
+    <div class="phone">
+      <div class="p-header">
+        <div class="avatar">م</div>
+        <div>
+          <div class="p-name">مريم — وكيلة المبيعات</div>
+          <div class="p-status">متاحة دائماً ✦</div>
+        </div>
+      </div>
+      <div class="chat-body" id="chat">
+        <div class="typing" id="typ"><div class="td"></div><div class="td"></div><div class="td"></div></div>
+      </div>
+      <div class="p-input">
+        <div class="fake-input">اكتب رسالة...</div>
+        <span style="font-size:.9rem">📤</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div id="stats">
+  <div class="stats-row">
+    <div><div class="s-num">&lt; 3ث</div><div class="s-lbl">وقت الرد</div></div>
+    <div><div class="s-num">24/7</div><div class="s-lbl">بلا توقف</div></div>
+    <div><div class="s-num">3</div><div class="s-lbl">لغات: دارجة، عربي، فرنسي</div></div>
+    <div><div class="s-num">0 دج</div><div class="s-lbl">على ردود التحويل للإنسان</div></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="sec-head">
+    <div class="eyebrow">◆ المميزات</div>
+    <h2 class="sec-title">كل شيء تحتاجه وكيل مبيعات محترف</h2>
+    <p class="sec-sub">مريم مش غير chatbot — هي وكيلة متكاملة تفهم السياق وتتصرف بذكاء حقيقي</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🗣️</div>
+      <div class="feat-title">تفهم الدارجة الجزائرية</div>
+      <p class="feat-desc">مش عربي فصيح ومش فرنسي — مريم تفهم الطريقة اللي يحكيها الزبون الجزائري الحقيقي: "واش عندكم؟"، "بكاش؟"، "يصلح هذا؟"</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📦</div>
+      <div class="feat-title">تسجّل الطلبات أوتوماتيك</div>
+      <p class="feat-desc">تجمع الاسم، الولاية، والمقاس وتسجّل الطلب مباشرة — كل طلب في مكانه الصحيح بدون ما تعدّل على أي شيء يدوياً.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🤝</div>
+      <div class="feat-title">تحوّل للإنسان وقت اللازم</div>
+      <p class="feat-desc">كي تلقى سؤال خارج نطاقها، مريم تعرف تقول "الآن" وتحوّل المحادثة ليك بدون ما تخسر الزبون بردود فارغة.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🚚</div>
+      <div class="feat-title">متكاملة مع Noest Express</div>
+      <p class="feat-desc">مريم تعطي الزبون تكلفة التوصيل وحالة الطلب مباشرة داخل المحادثة.</p>
+      <div class="badge">ميزة حصرية في الجزائر</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="sec-head">
+    <div class="eyebrow">◆ كيفاش تخدم</div>
+    <h2 class="sec-title">ثلاث خطوات وابدأ تبيع</h2>
+    <p class="sec-sub">إعداد سهل، بدون تقني، بدون انتظار</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">١</div>
+      <div class="step-body">
+        <h3 class="step-title">ربط صفحتك على الميسنجر</h3>
+        <p class="step-desc">توصّل صفحة Facebook متاعتك بمريم في دقيقتين — بدون أي كود أو إعداد تقني. بس تسمح بالصلاحيات وخلاص.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">٢</div>
+      <div class="step-body">
+        <h3 class="step-title">تحميل كتالوغ منتجاتك</h3>
+        <p class="step-desc">ترفع قائمة منتجاتك مع أسعار ومقاسات وولايات التوصيل — ومريم تتعلّم كيفاش تردّ على كل سؤال متعلق بهم.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">٣</div>
+      <div class="step-body">
+        <h3 class="step-title">مريم تشتغل وأنت تتابع</h3>
+        <p class="step-desc">من لوحة التحكم تشوف كل المحادثات والطلبات في وقتها الحقيقي — وتتدخّل يدوياً وقتما تحب.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="sec-head">
+    <div class="eyebrow">◆ الأسعار</div>
+    <h2 class="sec-title">ادفع على الردود اللي تصنع مبيعات</h2>
+    <p class="sec-sub">نقاط غير منتهية الصلاحية — تبدأ بصغير وتوسّع مع تجارتك</p>
+  </div>
+  <div class="price-grid">
+    <div class="price-card">
+      <div class="p-name">البداية</div>
+      <div class="p-price">2,500 <sub>دج</sub></div>
+      <div class="p-unit">5,000 رد ذكي</div>
+      <ul class="p-feats">
+        <li>كل ردود الدارجة والعربي والفرنسي</li>
+        <li>تسجيل الطلبات تلقائي</li>
+        <li>لوحة تحكم كاملة</li>
+        <li>دعم تقني</li>
+      </ul>
+      <button class="btn-outline">ابدأ هنا</button>
+      <div class="vat">ش ق م: 2,125 دج &nbsp;|&nbsp; الرسم على القيمة المضافة: 375 دج</div>
+    </div>
+
+    <div class="price-card hot">
+      <div class="hot-badge">الأكثر طلباً</div>
+      <div class="p-name">النمو</div>
+      <div class="p-price">6,000 <sub>دج</sub></div>
+      <div class="p-unit">15,000 رد ذكي</div>
+      <ul class="p-feats">
+        <li>كل مميزات البداية</li>
+        <li>تكامل Noest Express</li>
+        <li>تقارير المبيعات الأسبوعية</li>
+        <li>أولوية الدعم التقني</li>
+      </ul>
+      <button class="btn-g">ابدأ هنا</button>
+      <div class="vat">ش ق م: 5,085 دج &nbsp;|&nbsp; الرسم على القيمة المضافة: 915 دج</div>
+    </div>
+
+    <div class="price-card">
+      <div class="p-name">المتجر الكبير</div>
+      <div class="p-price">18,000 <sub>دج</sub></div>
+      <div class="p-unit">50,000 رد ذكي</div>
+      <ul class="p-feats">
+        <li>كل مميزات النمو</li>
+        <li>متعدد الصفحات والحسابات</li>
+        <li>API مخصص للتكامل</li>
+        <li>مدير حساب مخصص</li>
+      </ul>
+      <button class="btn-outline">تواصل معنا</button>
+      <div class="vat">ش ق م: 15,254 دج &nbsp;|&nbsp; الرسم على القيمة المضافة: 2,746 دج</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="sec-head">
+    <div class="eyebrow">◆ أسئلة شائعة</div>
+    <h2 class="sec-title">كل سؤال في بالك — هنا جوابه</h2>
+  </div>
+  <div class="faq-wrap">
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        واقع مريم تفهم الدارجة الجزائرية؟ أو غير عربي فصيح؟
+        <span class="chev">▾</span>
+      </button>
+      <div class="faq-a">آه، مريم مبنية خصيصاً على دارجة جزائرية حقيقية — تفهم "واش عندكم؟"، "بكاش؟"، "نبغي نطلب"، "كيفاش التوصيل" وأكثر من 200 صياغة مختلفة يستعملها الزبائن الجزائريين كل يوم. مش chatbot عام مترجَم.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        كي مريم ما تعرفش تجاوب — واش تحسب علينا نقطة؟
+        <span class="chev">▾</span>
+      </button>
+      <div class="faq-a">لا. ردود التحويل للإنسان مجانية بالكامل. نقطة تُحسب فقط على الردود اللي تتم فيها معاملة كاملة — جواب صحيح أو تسجيل طلب. مريم ما تكلفك غير على النجاح.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        واش النقاط تنتهي صلاحيتها؟
+        <span class="chev">▾</span>
+      </button>
+      <div class="faq-a">أبداً. النقاط اللي تشريها ملكك وما عندها صلاحية تنتهي. تشري وقتما تحب واستعملها في وقتك الخاص.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        واش نقدر نتدخّل يدوياً في أي وقت؟
+        <span class="chev">▾</span>
+      </button>
+      <div class="faq-a">طبعاً. من لوحة التحكم تقدر تفتّح "وضع التدخّل اليدوي" لأي محادثة وتردّ أنت مباشرة — ومريم توقف تلقائياً حتى تعطيها الإذن مرة أخرى.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        واش مريم تخدم مع Instagram DMs كذلك؟
+        <span class="chev">▾</span>
+      </button>
+      <div class="faq-a">نعم، مريم تخدم مع Messenger وInstagram DMs في نفس الوقت من نفس لوحة التحكم — مش محتاج إعداد مزدوج.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-wrap">
+    <div class="cta-geo"></div>
+    <div class="eyebrow">◆ ابدأ اليوم</div>
+    <h2 class="cta-title">زبائنك ينتظرون — مريم مستعدة</h2>
+    <p class="cta-sub">ابدأ تجربتك المجانية اليوم. إعداد في أقل من 10 دقائق، بدون بطاقة بنكية.</p>
+    <a href="#" class="btn-gold" style="font-size:1rem;padding:.9rem 2.25rem;display:inline-flex">ابدأ تجربتك المجانية ←</a>
+    <div class="cta-note">بدون بطاقة بنكية &nbsp;•&nbsp; إلغاء في أي وقت &nbsp;•&nbsp; دعم على واتساب</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#hero" class="logo" style="font-size:1.15rem">مريم <em style="color:var(--gold);font-style:normal">✦</em></a>
+  <ul class="foot-links">
+    <li><a href="#">سياسة الخصوصية</a></li>
+    <li><a href="#">شروط الاستخدام</a></li>
+    <li><a href="#">تواصل معنا</a></li>
+  </ul>
+  <div class="foot-copy">© 2025 مريم. جميع الحقوق محفوظة.</div>
+</footer>
+
+<script>
+// ── CHAT ANIMATION ──
+const MSGS = [
+  {t:'in',  txt:'السلام، واش عندكم القيلا بالرزيزة في L؟', ms:800},
+  {t:'out', txt:'وعليكم السلام! آه عندنا 🎉\nالقيلا رزيزة متوفرة في L — السعر 2,800 دج\nالتوصيل 48-72 ساعة لكل الولايات\n\nتحبي نسجّل ليك واحدة؟', ms:2600},
+  {t:'in',  txt:'آه واه، الاسم نهاد، وهران', ms:5000},
+  {t:'out', txt:'تمام نهاد! سجّلنا طلبك ✅\nرقم الطلب: #1047\nالتوصيل لوهران: 500 دج\nالمجموع: 3,300 دج\n\nراح يتواصل معك الفريق قريب 🚚', ms:6600},
+];
+
+const chat = document.getElementById('chat');
+const typ  = document.getElementById('typ');
+let animHandle = [];
+
+function addBubble(m) {
+  const el = document.createElement('div');
+  el.className = `bubble b-${m.t}`;
+  el.textContent = m.txt;
+  chat.insertBefore(el, typ);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function runChat() {
+  MSGS.forEach(m => {
+    const h1 = setTimeout(() => {
+      if (m.t === 'out') {
+        typ.style.opacity = '1';
+        const h2 = setTimeout(() => {
+          typ.style.opacity = '0';
+          addBubble(m);
+        }, 1300);
+        animHandle.push(h2);
+      } else {
+        addBubble(m);
+      }
+    }, m.ms);
+    animHandle.push(h1);
+  });
+}
+
+function resetChat() {
+  animHandle.forEach(clearTimeout);
+  animHandle = [];
+  typ.style.opacity = '0';
+  chat.querySelectorAll('.bubble').forEach(b => {
+    b.classList.remove('show');
+    setTimeout(() => b.remove(), 350);
+  });
+  setTimeout(runChat, 700);
+}
+
+runChat();
+setInterval(resetChat, 11000);
+
+// ── FAQ ──
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const open = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+  if (!open) item.classList.add('open');
+}
+</script>
+</body>
+</html>

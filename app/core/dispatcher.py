@@ -1,22 +1,19 @@
+from app.config import settings
 from app.models.facebook import MessagingEvent
-from app.models.session import ConversationState
+from app.models.session import ConversationState, OrderDraft
 from app.core.session import session_manager
 from app.core.security import detect_prompt_injection, rate_limiter
 from app.services.facebook import facebook_send
-from app.agents.classifier import classify_intent
-from app.agents.maria import generate_reply
-from app.agents.intents import CustomerIntent
 from app.services.logging_service import logger
 from app.core.metrics import (
     messages_received_total,
-    intents_classified_total,
     escalations_total,
-    tool_calls_total
 )
-from app.tools.order_lookup import lookup_order
-from app.tools.faq import get_faq_answer
-from app.tools.catalog import search_catalog
-from app.tools.escalation import escalate_to_human
+from app.agents.maria_brain import think_and_respond, merge_order_draft
+from app.tools.order_flow import create_order
+from app.services.learning import log_conversation
+from app.database import SessionLocal
+from app.models import Product
 
 
 async def handle_event(event: MessagingEvent):
@@ -44,7 +41,7 @@ async def handle_event(event: MessagingEvent):
 
     async def safe_send(text: str):
         try:
-            await facebook_send.send_text(recipient_id=sender_id, text=text)
+            await facebook_send.send_text(recipient_id=sender_id, text=text, page_id=page_id)
         except Exception as e:
             logger.error(f"Failed to send message to {sender_id}: {e}")
 
@@ -74,86 +71,67 @@ async def handle_event(event: MessagingEvent):
     await session_manager.add_message(sender_id, page_id, "user", message_text)
     state = await session_manager.get_or_create(sender_id, page_id)
 
-    intent_result = await classify_intent(
-        message=message_text,
-        conversation_history=state.to_groq_messages(),
-        language=state.language_preference
+    db = None
+    try:
+        db = SessionLocal()
+        available_products = db.query(Product).filter(Product.active == True).all()
+    except Exception:
+        available_products = []
+    finally:
+        if db:
+            db.close()
+
+    session_dict = {
+        "order_draft": state.order_draft.model_dump() if state.order_draft else None
+    }
+    history = [{"role": m.role, "content": m.content} for m in state.messages[-20:]]
+
+    response_text, order_update, action = await think_and_respond(
+        customer_message=message_text,
+        conversation_history=history,
+        session=session_dict,
+        available_products=available_products
     )
 
-    if intent_result:
-        confidence_bucket = "high" if intent_result.confidence >= 0.8 else "medium" if intent_result.confidence >= 0.5 else "low"
-        intents_classified_total.labels(
-            intent=intent_result.intent.value if hasattr(intent_result.intent, 'value') else str(intent_result.intent),
-            confidence_bucket=confidence_bucket
-        ).inc()
-        await session_manager.update_intent(sender_id, page_id, intent_result.intent.value)
+    merged = merge_order_draft(session_dict["order_draft"], order_update)
+    state.order_draft = OrderDraft(**merged) if merged else None
 
-    intent = intent_result.intent if intent_result else CustomerIntent.UNKNOWN
-    tool_result = None
+    if action == "CREATE_ORDER":
+        if state.order_draft:
+            order = await create_order(sender_id, state.order_draft)
+            await log_conversation(
+                sender_id=sender_id,
+                customer_id=order.customer_id,
+                message_count=len(state.messages),
+                completed_order=True,
+                product_name=state.order_draft.product_name
+            )
+            state.order_draft = None
 
-    if intent == CustomerIntent.ORDER_STATUS:
-        tool_calls_total.labels(tool_name="order_lookup", status="attempt").inc()
-        order_id = state.order_id_mentioned or _extract_order_id(message_text)
-        if order_id:
-            tool_result = await lookup_order(order_id, sender_id)
-            if tool_result.get("error"):
-                tool_calls_total.labels(tool_name="order_lookup", status="error").inc()
-            else:
-                tool_calls_total.labels(tool_name="order_lookup", status="success").inc()
-
-    elif intent == CustomerIntent.ORDER_CANCEL:
-        tool_calls_total.labels(tool_name="order_lookup", status="attempt").inc()
-        order_id = state.order_id_mentioned or _extract_order_id(message_text)
-        if order_id:
-            tool_result = await lookup_order(order_id, sender_id)
-            if tool_result and not tool_result.get("error"):
-                tool_calls_total.labels(tool_name="order_lookup", status="success").inc()
-
-    elif intent in (CustomerIntent.STORE_HOURS, CustomerIntent.PAYMENT_METHODS, CustomerIntent.RETURN_EXCHANGE):
-        tool_calls_total.labels(tool_name="faq", status="attempt").inc()
-        tool_result = get_faq_answer(intent, state.language_preference)
-        tool_calls_total.labels(tool_name="faq", status="success").inc()
-
-    elif intent in (CustomerIntent.PRODUCT_INFO, CustomerIntent.PRICE_INQUIRY):
-        tool_calls_total.labels(tool_name="catalog", status="attempt").inc()
-        tool_result = await search_catalog(message_text)
-        tool_calls_total.labels(tool_name="catalog", status="success").inc()
-
-    if intent in (CustomerIntent.LEGAL_THREAT, CustomerIntent.PAYMENT_DISPUTE, CustomerIntent.FRAUD_SUSPICION):
-        tool_calls_total.labels(tool_name="escalation", status="attempt").inc()
-        await escalate_to_human(sender_id, state, reason=f"Intent: {intent.value}")
+    elif action == "ESCALATE":
+        from app.tools.escalation import escalate_to_human
+        await escalate_to_human(sender_id, state, reason="Customer requested human agent")
         await session_manager.request_escalation(sender_id, page_id)
-        tool_calls_total.labels(tool_name="escalation", status="success").inc()
-        escalations_total.labels(reason=intent.value).inc()
-        await safe_send("نوصلك للمسؤول دابا، صبر شويا 😊")
-        return
+        escalations_total.labels(reason="customer_requested").inc()
+        await log_conversation(
+            sender_id=sender_id,
+            message_count=len(state.messages),
+            escalated=True
+        )
 
-    if intent in (CustomerIntent.UNKNOWN, CustomerIntent.OUT_OF_SCOPE):
-        reply = "سمعتك! كيفاش نقدر نعاونك؟ 😊"
-        await safe_send(reply)
-        await session_manager.add_message(sender_id, page_id, "assistant", reply, intent="handoff")
-        return
+    elif action == "RESET":
+        state.order_draft = None
 
-    reply = await generate_reply(
-        message=message_text,
-        state=state,
-        intent=intent,
-        tool_result=tool_result
-    )
-
-    await safe_send(reply)
-    await session_manager.add_message(
-        sender_id, page_id, "assistant", reply,
-        intent=intent.value if hasattr(intent, 'value') else str(intent)
-    )
+    await safe_send(response_text)
+    await session_manager.add_message(sender_id, page_id, "assistant", response_text)
 
 
 def _extract_order_id(text: str) -> str:
     import re
-    match = re.search(r"#?(\d{3,8})", text)
+    match = re.search(r"(?:#|commande|order|طلب)\s*[#: ]?\s*(\d{3,8})", text, re.IGNORECASE)
     if match:
         return match.group(1)
-    match = re.search(r"(?:commande|order|طلب)\s*[#: ]?\s*(\d{3,8})", text, re.IGNORECASE)
+    match = re.search(r"(?<!\d)(\d{4,8})(?!\d)", text)
     if match:
         return match.group(1)
     return ""

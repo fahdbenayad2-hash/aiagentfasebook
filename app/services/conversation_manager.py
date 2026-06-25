@@ -1,11 +1,11 @@
 import json
-import time
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from app.models import Conversation, Customer, Order, OrderItem, Product
 from app.schemas import AIResponse
 from app.services.ai_engine import ai_engine
+from app.services.cache import TTLCache
 from app.config import get_settings
 from app.services.logging_service import logger
 
@@ -31,7 +31,7 @@ STATE_TRANSITIONS = {
     "ORDER_COMPLETE": {"IDLE", "FAQ", "BROWSE"},
 }
 
-_products_cache: Dict[str, Any] = {"data": None, "timestamp": 0}
+products_cache = TTLCache(ttl=settings.PRODUCT_CACHE_TTL_SECONDS)
 
 
 class ConversationManager:
@@ -47,7 +47,7 @@ class ConversationManager:
         if conv:
             timeout = settings.CONVERSATION_TIMEOUT_MINUTES
             if conv.last_message_at:
-                elapsed = (datetime.utcnow() - conv.last_message_at).total_seconds() / 60
+                elapsed = (datetime.now(timezone.utc).replace(tzinfo=None) - conv.last_message_at).total_seconds() / 60
                 if elapsed > timeout and conv.current_state not in ("ORDER_COMPLETE",):
                     logger.info(f"Conversation {conv.id} timed out, resetting to IDLE")
                     conv.current_state = "IDLE"
@@ -88,12 +88,9 @@ class ConversationManager:
         return customer
 
     def _get_products(self, db: Session) -> List[Dict[str, Any]]:
-        global _products_cache
-        now = time.time()
-        ttl = settings.PRODUCT_CACHE_TTL_SECONDS
-
-        if _products_cache["data"] is not None and (now - _products_cache["timestamp"]) < ttl:
-            return _products_cache["data"]
+        cached = products_cache.get()
+        if cached is not None:
+            return cached
 
         products = db.query(Product).filter(Product.active == True).all()
         data = [
@@ -107,15 +104,14 @@ class ConversationManager:
             }
             for p in products
         ]
-        _products_cache["data"] = data
-        _products_cache["timestamp"] = now
+        products_cache.set(data)
         return data
 
     def _update_context_data(
         self, context_data: Dict[str, Any], extracted_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         updated = dict(context_data or {})
-        for key, value in extracted_data.items():
+        for key, value in (extracted_data or {}).items():
             if value and str(value).strip():
                 updated[key] = value
         return updated
@@ -130,12 +126,13 @@ class ConversationManager:
         if not phone:
             return False
         digits = ''.join(c for c in phone if c.isdigit())
-        return len(digits) == 10 and digits.startswith(('05', '06', '07'))
+        return len(digits) == 10 and digits.startswith(('05', '06', '07', '03', '09'))
 
     def _validate_state_name(self, state: str) -> bool:
         if not state:
             return False
         state_clean = state.strip()
+        # 55 wilayas — pre-2019 divisions. Not exhaustive but covers common cases.
         states = [
             "أدرار", "الشلف", "الأغواط", "أم البواقي", "باتنة", "بجاية", "بسكرة", "بشار",
             "البليدة", "البويرة", "تمنراست", "تبسة", "تلمسان", "تيارت", "تيزي وزو", "الجزائر",
@@ -164,7 +161,7 @@ class ConversationManager:
         conv.messages = (conv.messages or []) + [{
             "role": "user",
             "content": message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         }]
 
         # إذا المحادثة في حالة HANDOFF، نرد رسالة مختصرة بدون ما نشغّل LLM
@@ -173,9 +170,9 @@ class ConversationManager:
             conv.messages = (conv.messages or []) + [{
                 "role": "assistant",
                 "content": response_text,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
             }]
-            conv.last_message_at = datetime.utcnow()
+            conv.last_message_at = datetime.now(timezone.utc).replace(tzinfo=None)
             db.commit()
             return {
                 "response": response_text,
@@ -185,8 +182,37 @@ class ConversationManager:
                 "conversation_id": conv.id
             }
 
-        # المنتج ثابت في MARIA_SYSTEM_PROMPT — ما نحتاجش نجيبو من DB
-        products = []
+        if conv.current_state == "IDLE":
+            customer.interaction_count = (customer.interaction_count or 0) + 1
+
+        # كلمة "موظف" ترفع التولة مباشرة بدون ما نحتاجو Groq
+        msg_lower = message.strip()
+        if any(kw in msg_lower for kw in ("موظف", "موظفة", "human", "agent", "وظف", "بشري")):
+            new_state = "HANDOFF"
+            conv.current_state = new_state
+            response_text = "تم تحويلك إلى الموظف البشري. سيرد عليك في أقرب وقت ممكن ✅"
+            conv.messages = (conv.messages or []) + [
+                {"role": "assistant", "content": response_text, "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat()}
+            ]
+            conv.last_message_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            db.commit()
+            try:
+                from app.services.notification_service import notification_service
+                await notification_service.send_handoff_notification({
+                    "customer_name": customer.name or "غير معروف",
+                    "platform": platform,
+                    "last_message": message
+                })
+            except Exception as e:
+                logger.error(f"Handoff notification failed: {e}")
+            return {
+                "response": response_text,
+                "state": new_state,
+                "needs_human": True,
+                "context_data": conv.context_data,
+                "conversation_id": conv.id
+            }
+
         history = [{"role": m["role"], "content": m["content"]} for m in conv.messages[-20:-1]]
 
         ai_response: AIResponse = await ai_engine.process_message(
@@ -194,7 +220,9 @@ class ConversationManager:
             conversation_history=history,
             current_state=conv.current_state,
             context_data=conv.context_data or {},
-            products=products
+            products=[],
+            customer=customer,
+            db=db
         )
 
         conv.context_data = self._update_context_data(
@@ -207,6 +235,18 @@ class ConversationManager:
             conv.current_state = new_state
 
         response_text = ai_response.response
+
+        # تتبع آخر منتج تم مناقشته — نخزنو ID المنتج فـ context عشان أسئلة المتابعة
+        product_mentions = ai_response.product_mentions or []
+        if isinstance(product_mentions, list) and product_mentions:
+            first_name = product_mentions[0]
+            if isinstance(first_name, str) and first_name.strip():
+                prod = db.query(Product).filter(
+                    Product.active == True,
+                    Product.name.ilike(f"%{first_name.strip()}%")
+                ).first()
+                if prod:
+                    conv.context_data["current_product_id"] = str(prod.id)
 
         # ماريا تتحقق من صحة رقم الهاتف والولاية بنفسها عبر الـ AI
 
@@ -223,9 +263,9 @@ class ConversationManager:
         conv.messages = (conv.messages or []) + [{
             "role": "assistant",
             "content": response_text,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         }]
-        conv.last_message_at = datetime.utcnow()
+        conv.last_message_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         db.commit()
         db.refresh(conv)
@@ -325,8 +365,7 @@ class ConversationManager:
 
 
 def invalidate_products_cache():
-    global _products_cache
-    _products_cache = {"data": None, "timestamp": 0}
+    products_cache.invalidate()
 
 
 conversation_manager = ConversationManager()

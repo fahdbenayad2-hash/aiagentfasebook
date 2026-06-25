@@ -2,29 +2,31 @@ import json
 import os
 from typing import Optional
 
+from app.services.cache import TTLCache
 
-_FAQ_CACHE = None
+
+faq_cache = TTLCache(ttl=3600)
 
 
 def _load_faq() -> dict:
-    global _FAQ_CACHE
-    if _FAQ_CACHE is not None:
-        return _FAQ_CACHE
+    cached = faq_cache.get()
+    if cached is not None:
+        return cached
     path = os.path.join(os.path.dirname(__file__), "..", "data", "faq.json")
     try:
         with open(path, encoding="utf-8") as f:
-            _FAQ_CACHE = json.load(f)
+            data = json.load(f)
     except FileNotFoundError:
-        _FAQ_CACHE = {}
-    return _FAQ_CACHE
+        data = {}
+    faq_cache.set(data)
+    return data
 
 
 FAQ_INTENT_MAP = {
     "store_hours": "store_hours",
     "payment_methods": "payment_methods",
     "return_exchange": "return_policy",
-    "delivery_delay": "delivery_info",
-    "store_hours": "store_hours"
+    "delivery_delay": "delivery_info"
 }
 
 

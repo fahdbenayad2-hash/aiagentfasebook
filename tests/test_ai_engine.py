@@ -44,7 +44,7 @@ async def test_process_message_fallback_on_error():
 
     assert isinstance(result, AIResponse)
     assert result.intent == "faq"
-    assert "عذراً" in result.response
+    assert "سمحيلي" in result.response
 
 
 @pytest.mark.asyncio

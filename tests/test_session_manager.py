@@ -2,14 +2,25 @@ import pytest
 import pytest_asyncio
 import tempfile
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.database import Base
 from app.core.session import SessionManager
 
 
 @pytest_asyncio.fixture
 async def manager():
     tmp = tempfile.mktemp(suffix=".db")
-    m = SessionManager(db_path=tmp)
-    return m
+    engine = create_engine(f"sqlite:///{tmp}", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    m = SessionManager(session_factory=TestSessionLocal)
+    yield m
+    engine.dispose()
+    try:
+        os.unlink(tmp)
+    except PermissionError:
+        pass
 
 
 @pytest.mark.asyncio

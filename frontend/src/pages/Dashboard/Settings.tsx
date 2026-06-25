@@ -1,0 +1,195 @@
+import { useState, useEffect, FormEvent } from 'react';
+import client from '../../api/client';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+
+export default function Settings() {
+  const [tab, setTab] = useState<'page' | 'products' | 'notifications'>('page');
+  const [connectedPage, setConnectedPage] = useState<{ name: string; id: string } | null>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [notifPhone, setNotifPhone] = useState('');
+  const [notifNewOrder, setNotifNewOrder] = useState(true);
+  const [notifHandoff, setNotifHandoff] = useState(true);
+
+  useEffect(() => {
+    client.get('/api/facebook/connections').then(r => {
+      const pages = r.data?.connections || r.data || [];
+      if (pages.length) setConnectedPage(pages[0]);
+    }).catch(() => {});
+
+    client.get('/api/products').then(r => setProducts(r.data)).catch(() => {});
+
+    client.get('/api/settings/notifications').then(r => {
+      setNotifPhone(r.data.phone || '');
+      setNotifNewOrder(r.data.new_order ?? true);
+      setNotifHandoff(r.data.handoff ?? true);
+    }).catch(() => {});
+  }, []);
+
+  const handleProductToggle = async (id: number, available: boolean) => {
+    try {
+      await client.patch(`/api/products/${id}`, { available });
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, active: available } : p));
+    } catch {}
+  };
+
+  const handleCSVUpload = async (e: FormEvent<HTMLInputElement>) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const { data } = await client.post('/api/products/upload', form);
+      setProducts(prev => [...prev, ...data]);
+    } catch {}
+  };
+
+  const saveNotifications = async () => {
+    try {
+      await client.put('/api/settings/notifications', {
+        phone: notifPhone,
+        new_order: notifNewOrder,
+        handoff: notifHandoff,
+      });
+    } catch {}
+  };
+
+  const tabs = [
+    { key: 'page', label: 'الصفحة' },
+    { key: 'products', label: 'المنتجات' },
+    { key: 'notifications', label: 'الإشعارات' },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key as typeof tab)}
+            style={{
+              padding: '.55rem 1.25rem',
+              borderRadius: 6,
+              border: 'none',
+              background: tab === t.key ? 'var(--gold-d)' : 'transparent',
+              color: tab === t.key ? 'var(--gold)' : 'var(--muted)',
+              fontWeight: 700,
+              fontSize: '.85rem',
+              fontFamily: "'Cairo',sans-serif",
+              cursor: 'pointer',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'page' && (
+        <Card>
+          <h3 style={{ marginBottom: 16 }}>ربط صفحة فيسبوك</h3>
+          {connectedPage ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--gold-d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cairo',sans-serif", fontWeight: 700, fontSize: '1rem', color: 'var(--gold)' }}>
+                  {(connectedPage.name || '?')[0]}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700 }}>{connectedPage.name}</div>
+                  <div style={{ fontSize: '.78rem', color: 'var(--muted)' }}>ID: {connectedPage.id}</div>
+                </div>
+              </div>
+              <a href="/admin/facebook/connect" target="_blank">
+                <Button variant="danger" size="sm">فصل الصفحة</Button>
+              </a>
+            </div>
+          ) : (
+            <div>
+              <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '.85rem' }}>ماكاش صفحة متصلة حالياً. اربط صفحتك باش ماريا تبدأ تستقبل الرسائل.</p>
+              <a href="/admin/facebook/connect" target="_blank">
+                <Button>ربط صفحة فيسبوك</Button>
+              </a>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {tab === 'products' && (
+        <div>
+          <div style={{ marginBottom: 20 }}>
+            <input
+              type="file"
+              accept=".csv,.json"
+              onChange={handleCSVUpload}
+              style={{ display: 'none' }}
+              id="csv-upload"
+            />
+            <label htmlFor="csv-upload">
+              <Button variant="outline">رفع كتالوغ (CSV/JSON)</Button>
+            </label>
+          </div>
+          <Card style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['اسم المنتج', 'السعر', 'المقاسات', 'متوفر'].map(h => (
+                    <th key={h} style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--muted)', fontWeight: 700, fontFamily: "'Cairo',sans-serif", fontSize: '.75rem' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {products.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '12px 14px' }}>{p.name}</td>
+                    <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", fontWeight: 700 }}>{p.price.toLocaleString()} دج</td>
+                    <td style={{ padding: '12px 14px', color: 'var(--muted)' }}>{(p.sizes || []).join(', ')}</td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <button
+                        onClick={() => handleProductToggle(p.id, !p.active)}
+                        style={{
+                          width: 44, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
+                          background: p.active ? 'var(--success)' : 'var(--faint)',
+                          position: 'relative', transition: 'background .2s',
+                        }}
+                      >
+                        <div style={{
+                          width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                          position: 'absolute', top: 3, right: p.active ? 3 : 25,
+                          transition: 'right .2s',
+                        }} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!products.length && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>ماكاش منتجات. ارفع كتالوغ باش تبدا.</div>}
+          </Card>
+        </div>
+      )}
+
+      {tab === 'notifications' && (
+        <Card>
+          <h3 style={{ marginBottom: 16 }}>إعدادات الإشعارات</h3>
+          <Input
+            label="رقم واتساب للتنبيهات"
+            value={notifPhone}
+            onChange={e => setNotifPhone(e.target.value)}
+            placeholder="05XX XXXXXX"
+          />
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8 }}>
+              <input type="checkbox" checked={notifNewOrder} onChange={e => setNotifNewOrder(e.target.checked)} style={{ accentColor: 'var(--gold)', width: 18, height: 18 }} />
+              <span style={{ fontSize: '.85rem' }}>إشعار طلب جديد</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={notifHandoff} onChange={e => setNotifHandoff(e.target.checked)} style={{ accentColor: 'var(--gold)', width: 18, height: 18 }} />
+              <span style={{ fontSize: '.85rem' }}>إشعار تحويل يدوي</span>
+            </label>
+          </div>
+          <Button onClick={saveNotifications}>حفظ الإعدادات</Button>
+        </Card>
+      )}
+    </div>
+  );
+}

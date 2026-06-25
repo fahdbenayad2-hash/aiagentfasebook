@@ -1,74 +1,106 @@
 import json
 import time
-import aiosqlite
 from datetime import datetime, timezone
 from typing import Optional, List
 from app.models.session import ConversationState, Message
+from app.models import SessionRecord
 from app.config import settings
 
 
 def _utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class SessionManager:
-    def __init__(self, db_path: Optional[str] = None):
-        self._db_path = db_path or "data/sessions.db"
+    def __init__(self, session_factory=None):
         self._cache: dict = {}
+        self._session_factory = session_factory
 
-    async def _init_db(self):
-        async with aiosqlite.connect(self._db_path) as db:
-            await db.execute("""
-                CREATE TABLE IF NOT EXISTS sessions (
-                    sender_id TEXT NOT NULL,
-                    page_id TEXT NOT NULL,
-                    state TEXT NOT NULL,
-                    created_at REAL NOT NULL,
-                    last_active REAL NOT NULL,
-                    PRIMARY KEY (sender_id, page_id)
-                )
-            """)
-            await db.commit()
+    def _get_db(self):
+        if self._session_factory:
+            return self._session_factory()
+        from app.database import SessionLocal
+        return SessionLocal()
 
-    def _ensure_db(self):
-        import os
-        if not os.path.exists(self._db_path):
-            return
-        if not hasattr(self, '_db_inited'):
-            import asyncio
+    async def _load_from_db(self, sender_id: str, page_id: str) -> Optional[ConversationState]:
+        import asyncio
+        def _sync():
+            db = self._get_db()
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    loop.create_task(self._init_db())
-            except RuntimeError:
-                pass
-            self._db_inited = True
+                rec = db.query(SessionRecord).filter(
+                    SessionRecord.sender_id == sender_id,
+                    SessionRecord.page_id == page_id
+                ).first()
+                if rec:
+                    data = json.loads(rec.state_json)
+                    state = ConversationState(**data)
+                    if state.last_active.tzinfo is None:
+                        ref = state.last_active.replace(tzinfo=timezone.utc)
+                    else:
+                        ref = state.last_active
+                    elapsed = (datetime.now(timezone.utc) - ref).total_seconds() / 60
+                    if elapsed < settings.SESSION_TTL_MINUTES:
+                        return state
+                return None
+            finally:
+                db.close()
+        return await asyncio.to_thread(_sync)
+
+    async def _save_to_db(self, state: ConversationState):
+        import asyncio
+        def _sync():
+            db = self._get_db()
+            try:
+                rec = db.query(SessionRecord).filter(
+                    SessionRecord.sender_id == state.sender_id,
+                    SessionRecord.page_id == state.page_id
+                ).first()
+                if rec:
+                    rec.state_json = state.model_dump_json()
+                    rec.last_active = _utcnow()
+                else:
+                    rec = SessionRecord(
+                        sender_id=state.sender_id,
+                        page_id=state.page_id,
+                        state_json=state.model_dump_json()
+                    )
+                    db.add(rec)
+                db.commit()
+            finally:
+                db.close()
+        return await asyncio.to_thread(_sync)
+
+    async def _delete_from_db(self, sender_id: str, page_id: str):
+        import asyncio
+        def _sync():
+            db = self._get_db()
+            try:
+                db.query(SessionRecord).filter(
+                    SessionRecord.sender_id == sender_id,
+                    SessionRecord.page_id == page_id
+                ).delete()
+                db.commit()
+            finally:
+                db.close()
+        return await asyncio.to_thread(_sync)
 
     async def get_or_create(self, sender_id: str, page_id: str) -> ConversationState:
         cache_key = f"{sender_id}:{page_id}"
         if cache_key in self._cache:
             state = self._cache[cache_key]
-            elapsed = (time.time() - state.last_active.timestamp()) / 60
+            if state.last_active.tzinfo is None:
+                ref = state.last_active.replace(tzinfo=timezone.utc)
+            else:
+                ref = state.last_active
+            elapsed = (datetime.now(timezone.utc) - ref).total_seconds() / 60
             if elapsed < settings.SESSION_TTL_MINUTES:
                 return state
             del self._cache[cache_key]
 
-        await self._init_db()
-        async with aiosqlite.connect(self._db_path) as db:
-            db.row_factory = aiosqlite.Row
-            cursor = await db.execute(
-                "SELECT state FROM sessions WHERE sender_id = ? AND page_id = ?",
-                (sender_id, page_id)
-            )
-            row = await cursor.fetchone()
-
-        if row:
-            data = json.loads(row["state"])
-            state = ConversationState(**data)
-            elapsed = (time.time() - state.last_active.timestamp()) / 60
-            if elapsed < settings.SESSION_TTL_MINUTES:
-                self._cache[cache_key] = state
-                return state
+        state = await self._load_from_db(sender_id, page_id)
+        if state:
+            self._cache[cache_key] = state
+            return state
 
         now = _utcnow()
         state = ConversationState(
@@ -83,7 +115,7 @@ class SessionManager:
             created_at=now,
             last_active=now
         )
-        await self._save(state)
+        await self._save_to_db(state)
         self._cache[cache_key] = state
         return state
 
@@ -106,7 +138,7 @@ class SessionManager:
         state.last_active = _utcnow()
         if len(state.messages) > settings.MARIA_MAX_MESSAGES_PER_SESSION:
             state.messages = state.messages[-settings.MARIA_MAX_MESSAGES_PER_SESSION:]
-        await self._save(state)
+        await self._save_to_db(state)
         cache_key = f"{sender_id}:{page_id}"
         self._cache[cache_key] = state
         return state
@@ -114,49 +146,33 @@ class SessionManager:
     async def update_intent(self, sender_id: str, page_id: str, intent: str):
         state = await self.get_or_create(sender_id, page_id)
         state.current_intent = intent
-        await self._save(state)
+        await self._save_to_db(state)
 
     async def set_awaiting_tool(self, sender_id: str, page_id: str, awaiting: bool):
         state = await self.get_or_create(sender_id, page_id)
         state.awaiting_tool_result = awaiting
-        await self._save(state)
+        await self._save_to_db(state)
 
     async def request_escalation(self, sender_id: str, page_id: str):
         state = await self.get_or_create(sender_id, page_id)
         state.escalation_requested = True
-        await self._save(state)
+        await self._save_to_db(state)
 
     async def set_language(self, sender_id: str, page_id: str, lang: str):
         state = await self.get_or_create(sender_id, page_id)
         state.language_preference = lang
-        await self._save(state)
+        await self._save_to_db(state)
 
-    async def _save(self, state: ConversationState):
-        await self._init_db()
-        async with aiosqlite.connect(self._db_path) as db:
-            await db.execute(
-                """INSERT OR REPLACE INTO sessions (sender_id, page_id, state, created_at, last_active)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (
-                    state.sender_id,
-                    state.page_id,
-                    state.model_dump_json(),
-                    state.created_at.timestamp(),
-                    state.last_active.timestamp()
-                )
-            )
-            await db.commit()
+    async def save(self, sender_id: str, page_id: str, state: ConversationState):
+        cache_key = f"{sender_id}:{page_id}"
+        state.last_active = _utcnow()
+        await self._save_to_db(state)
+        self._cache[cache_key] = state
 
     async def delete_session(self, sender_id: str, page_id: str):
         cache_key = f"{sender_id}:{page_id}"
         self._cache.pop(cache_key, None)
-        await self._init_db()
-        async with aiosqlite.connect(self._db_path) as db:
-            await db.execute(
-                "DELETE FROM sessions WHERE sender_id = ? AND page_id = ?",
-                (sender_id, page_id)
-            )
-            await db.commit()
+        await self._delete_from_db(sender_id, page_id)
 
 
 session_manager = SessionManager()
