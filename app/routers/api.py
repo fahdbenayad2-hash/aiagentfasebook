@@ -340,6 +340,37 @@ async def get_facebook_connections(
 
 
 #
+# ─── CUSTOMERS ─────────────────────────────────────
+#
+
+@router.get("/customers")
+async def list_customers(
+    limit: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Customer).order_by(Customer.created_at.desc())
+    if search:
+        q = q.filter(Customer.name.ilike(f"%{search}%"))
+    if limit:
+        q = q.limit(limit)
+    customers = q.all()
+    return [
+        {
+            "id": c.id,
+            "name": c.name or "غير معروف",
+            "phone": c.phone or "",
+            "state": c.state or "",
+            "platform": c.platform,
+            "orders_count": len(c.orders) if hasattr(c, "orders") else 0,
+            "created_at": c.created_at.strftime("%Y-%m-%d") if c.created_at else "",
+        }
+        for c in customers
+    ]
+
+
+#
 # ─── PRODUCTS ─────────────────────────────────────
 #
 

@@ -5,6 +5,9 @@ const LINKS = [
   { to: '/dashboard', icon: '🏠', label: 'الرئيسية', exact: true },
   { to: '/dashboard/conversations', icon: '💬', label: 'المحادثات' },
   { to: '/dashboard/orders', icon: '📦', label: 'الطلبات' },
+  { to: '/dashboard/products', icon: '🛍️', label: 'المنتجات' },
+  { to: '/dashboard/customers', icon: '👥', label: 'العملاء' },
+  { to: '/dashboard/connected-accounts', icon: '🔗', label: 'الحسابات المتصلة' },
   { to: '/dashboard/settings', icon: '⚙️', label: 'الإعدادات' },
 ];
 

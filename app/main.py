@@ -100,6 +100,18 @@ async def root():
     }
 
 
+@app.get("/admin/")
+async def admin_redirect():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard")
+
+
+@app.get("/admin")
+async def admin_redirect_no_slash():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard")
+
+
 @app.get("/privacy")
 async def privacy():
     from fastapi.responses import FileResponse
