@@ -104,21 +104,9 @@ def render_page(title: str, content: str, active: str = "") -> str:
     )
 
 
-@router.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, db: Session = Depends(get_db)):
-    verify_admin_auth(request)
-
-    total_orders = db.query(Order).count()
-    pending_orders = db.query(Order).filter(Order.status == "pending").count()
-    total_customers = db.query(Customer).count()
-    total_products = db.query(Product).filter(Product.active == True).count()
-
-    today_start = datetime.now(timezone.utc).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
-    today_orders = db.query(Order).filter(Order.created_at >= today_start).count()
-
-    revenue = db.query(func.coalesce(func.sum(Order.total_price), 0)).filter(
-        Order.status.in_(["delivered", "shipped"])
-    ).scalar()
+@router.get("/")
+async def dashboard_redirect(request: Request):
+    return RedirectResponse(url="/dashboard")
 
     recent_orders = db.query(Order).order_by(Order.created_at.desc()).limit(10).all()
     rows = ""
