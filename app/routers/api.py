@@ -401,6 +401,39 @@ class ProductAvailableUpdate(BaseModel):
     available: bool
 
 
+class ProductCreate(BaseModel):
+    name: str
+    price: int
+    stock: int = 0
+    category: str = ""
+    description: str = ""
+    colors: str = ""
+    sizes: str = ""
+
+
+@router.post("/products")
+async def create_product(
+    body: ProductCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    product = Product(
+        name=body.name.strip(),
+        price=body.price,
+        stock=body.stock,
+        category=body.category.strip() or None,
+        description=body.description.strip(),
+    )
+    if body.colors.strip():
+        product.set_colors([c.strip() for c in body.colors.split(",") if c.strip()])
+    if body.sizes.strip():
+        product.set_sizes([s.strip() for s in body.sizes.split(",") if s.strip()])
+    db.add(product)
+    db.commit()
+    invalidate_products_cache()
+    return {"id": product.id, "name": product.name}
+
+
 @router.patch("/products/{product_id}")
 async def toggle_product_availability(
     product_id: int,
