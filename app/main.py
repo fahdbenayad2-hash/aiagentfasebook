@@ -60,6 +60,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:8000",
         "https://maria-store.vercel.app",
+        "https://poetic-patience-production.up.railway.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
