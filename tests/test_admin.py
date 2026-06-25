@@ -10,7 +10,7 @@ def _auth_header():
 def test_admin_dashboard(client):
     response = client.get("/admin/", headers=_auth_header())
     assert response.status_code == 200
-    assert "متجر فهد" in response.text
+    assert "MARIA" in response.text
     assert "لوحة التحكم" in response.text
 
 

@@ -39,7 +39,7 @@ export default function Demo() {
       const t = setTimeout(() => {
         setMessages([{
           role: 'assistant',
-          content: 'السلام! أنا ماريا 👋 وكيلة مبيعات متجر فهد\n\nكيفاش نقدر نساعدك اليوم؟',
+          content: 'السلام! أنا ماريا 👋 وكيلة مبيعاتي\n\nكيفاش نقدر نساعدك اليوم؟',
         }]);
       }, 800);
       return () => clearTimeout(t);

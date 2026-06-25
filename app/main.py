@@ -23,7 +23,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting AI Agent Shop - فهد")
+    logger.info("Starting MARIA")
     Base.metadata.create_all(bind=engine)
     run_migration()
 
@@ -42,10 +42,10 @@ async def lifespan(app: FastAPI):
     yield
 
     task.cancel()
-    logger.info("Shutting down AI Agent Shop - فهد")
+    logger.info("Shutting down MARIA")
 
 app = FastAPI(
-    title="AI Agent Shop - فهد",
+    title="MARIA - AI Agent Shop",
     description="AI-powered customer service agent for Algerian e-commerce",
     version="2.0.0",
     lifespan=lifespan
@@ -93,7 +93,7 @@ async def root():
     if index_path.exists():
         return FileResponse(str(index_path))
     return {
-        "message": "مرحباً بك في نظام فهد للرد الآلي",
+        "message": "مرحباً بك في MARIA للرد الآلي",
         "version": "2.0.0",
         "docs": "/docs",
         "admin": "/admin/"
