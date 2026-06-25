@@ -154,6 +154,7 @@ class User(Base):
     notification_phone = Column(String, nullable=True)
     notify_new_order = Column(Boolean, default=True)
     notify_handoff = Column(Boolean, default=True)
+    telegram_chat_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

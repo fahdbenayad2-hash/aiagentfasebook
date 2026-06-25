@@ -1,3 +1,4 @@
+from typing import Optional
 import httpx
 from app.config import get_settings
 from app.services.logging_service import logger
@@ -80,21 +81,39 @@ class NotificationService:
 notification_service = NotificationService()
 
 
-async def send_telegram_notification(message: str) -> bool:
-    if not settings.TELEGRAM_BOT_TOKEN:
+async def send_telegram_notification(message: str, chat_id: Optional[str] = None) -> bool:
+    bot_token = settings.TELEGRAM_BOT_TOKEN
+    if not bot_token:
         logger.error("TELEGRAM_BOT_TOKEN not configured")
+        return False
+    if not chat_id:
+        chat_id = settings.TELEGRAM_STAFF_CHAT_ID
+    if not chat_id:
+        from app.database import SessionLocal
+        from app.models import User
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.telegram_chat_id.isnot(None)).first()
+            if user:
+                chat_id = user.telegram_chat_id
+        finally:
+            db.close()
+    if not chat_id:
+        logger.error("No Telegram chat_id configured anywhere")
         return False
     try:
         async with httpx.AsyncClient() as client:
-            url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             response = await client.post(
                 url,
                 json={
-                    "chat_id": settings.TELEGRAM_STAFF_CHAT_ID,
+                    "chat_id": chat_id,
                     "text": message,
                     "parse_mode": "HTML"
                 }
             )
+            if response.status_code != 200:
+                logger.error(f"Telegram send failed: {response.status_code} {response.text}")
             return response.status_code == 200
     except Exception as e:
         logger.error(f"send_telegram_notification failed: {e}")

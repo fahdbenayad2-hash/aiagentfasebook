@@ -11,6 +11,9 @@ export default function Settings() {
   const [notifPhone, setNotifPhone] = useState('');
   const [notifNewOrder, setNotifNewOrder] = useState(true);
   const [notifHandoff, setNotifHandoff] = useState(true);
+  const [telegramChatId, setTelegramChatId] = useState('');
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [testResult, setTestResult] = useState<'ok' | 'fail' | null>(null);
 
   useEffect(() => {
     client.get('/api/facebook/connections').then(r => {
@@ -24,6 +27,7 @@ export default function Settings() {
       setNotifPhone(r.data.phone || '');
       setNotifNewOrder(r.data.new_order ?? true);
       setNotifHandoff(r.data.handoff ?? true);
+      setTelegramChatId(r.data.telegram_chat_id || '');
     }).catch(() => {});
   }, []);
 
@@ -51,8 +55,21 @@ export default function Settings() {
         phone: notifPhone,
         new_order: notifNewOrder,
         handoff: notifHandoff,
+        telegram_chat_id: telegramChatId,
       });
     } catch {}
+  };
+
+  const testTelegram = async () => {
+    setTestingTelegram(true);
+    setTestResult(null);
+    try {
+      const { data } = await client.post('/api/settings/notifications/test');
+      setTestResult(data.success ? 'ok' : 'fail');
+    } catch {
+      setTestResult('fail');
+    }
+    setTestingTelegram(false);
   };
 
   const tabs = [
@@ -188,6 +205,20 @@ export default function Settings() {
             </label>
           </div>
           <Button onClick={saveNotifications}>حفظ الإعدادات</Button>
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <h4 style={{ fontSize: '.9rem', marginBottom: 12 }}>إشعارات تلجرام</h4>
+            <Input
+              label="معرف شات تلجرام (Chat ID)"
+              value={telegramChatId}
+              onChange={e => setTelegramChatId(e.target.value)}
+              placeholder="مثال: 123456789"
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <Button size="sm" onClick={testTelegram} loading={testingTelegram}>إرسال اختبار</Button>
+              {testResult === 'ok' && <span style={{ color: 'var(--success)', fontSize: '.82rem', alignSelf: 'center' }}>✅ تم</span>}
+              {testResult === 'fail' && <span style={{ color: 'var(--danger)', fontSize: '.82rem', alignSelf: 'center' }}>❌ فشل</span>}
+            </div>
+          </div>
         </Card>
       )}
     </div>

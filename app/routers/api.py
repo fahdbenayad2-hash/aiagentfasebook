@@ -521,6 +521,7 @@ async def get_notification_settings(
         "phone": current_user.notification_phone or "",
         "new_order": current_user.notify_new_order if current_user.notify_new_order is not None else True,
         "handoff": current_user.notify_handoff if current_user.notify_handoff is not None else True,
+        "telegram_chat_id": current_user.telegram_chat_id or "",
     }
 
 
@@ -528,6 +529,7 @@ class NotificationSettingsUpdate(BaseModel):
     phone: str = ""
     new_order: bool = True
     handoff: bool = True
+    telegram_chat_id: str = ""
 
 
 @router.put("/settings/notifications")
@@ -540,8 +542,21 @@ async def update_notification_settings(
     user.notification_phone = body.phone.strip() or None
     user.notify_new_order = body.new_order
     user.notify_handoff = body.handoff
+    user.telegram_chat_id = body.telegram_chat_id.strip() or None
     db.commit()
     return {"success": True}
+
+
+@router.post("/settings/notifications/test")
+async def test_telegram_notification(
+    current_user: User = Depends(get_current_user),
+):
+    from app.services.notification_service import send_telegram_notification
+    ok = await send_telegram_notification(
+        "🔔 <b>MARIA</b>\n✅ إشعار تجريبي — الإعدادات شغالة",
+        chat_id=current_user.telegram_chat_id or None,
+    )
+    return {"success": ok}
 
 
 #
