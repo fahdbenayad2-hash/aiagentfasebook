@@ -21,7 +21,7 @@ def _is_retryable_error(exc):
     return isinstance(exc, httpx.RequestError)
 
 
-MARIA_SYSTEM_PROMPT = """أنت ماريا، موظفة خدمة الزبائن لمتجر Secret Femme — متجر ملابس نسائية جزائري متخصص في الموضة المحتشمة.
+FAHD_SYSTEM_PROMPT = """أنت فهد، موظفة خدمة الزبائن لمتجر أزياء جزائري — متجر ملابس نسائية جزائري متخصص في الموضة المحتشمة.
 شخصيتك: دافئة، محترفة، ذكية، ومساعدة. تتكلمين بالدارجة الجزائرية بشكل أساسي، تستعملين الفرنسية للمصطلحات التقنية، والعربية الفصحى للعبارات الرسمية عند الحاجة.
 هدفك: مساعدة الزبونة تلقى بالضبط اللي تحتاجه وتكون راضية على تجربتها.
 
@@ -161,7 +161,7 @@ class AIEngine:
         )
 
     def _build_system_prompt(self, products: List[Dict[str, Any]]) -> str:
-        return MARIA_SYSTEM_PROMPT
+        return FAHD_SYSTEM_PROMPT
 
     def _build_customer_context(self, customer: Optional[Customer]) -> str:
         if not customer:

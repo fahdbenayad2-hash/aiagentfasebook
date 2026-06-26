@@ -136,8 +136,8 @@ class SessionManager:
         )
         state.messages.append(msg)
         state.last_active = _utcnow()
-        if len(state.messages) > settings.MARIA_MAX_MESSAGES_PER_SESSION:
-            state.messages = state.messages[-settings.MARIA_MAX_MESSAGES_PER_SESSION:]
+        if len(state.messages) > settings.FAHD_MAX_MESSAGES_PER_SESSION:
+            state.messages = state.messages[-settings.FAHD_MAX_MESSAGES_PER_SESSION:]
         await self._save_to_db(state)
         cache_key = f"{sender_id}:{page_id}"
         self._cache[cache_key] = state

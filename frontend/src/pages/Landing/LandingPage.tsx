@@ -5,6 +5,7 @@ import HowItWorksSection from '../../components/landing/HowItWorksSection';
 import PricingSection from '../../components/landing/PricingSection';
 import FAQSection from '../../components/landing/FAQSection';
 import CTASection from '../../components/landing/CTASection';
+import SocialProofSection from '../../components/landing/SocialProofSection';
 import FooterSection from '../../components/landing/FooterSection';
 import ParticlesCanvas from '../../animations/ParticlesCanvas';
 
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <HowItWorksSection />
       <PricingSection />
       <FAQSection />
+      <SocialProofSection />
       <CTASection />
       <FooterSection />
     </div>

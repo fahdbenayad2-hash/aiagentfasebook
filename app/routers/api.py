@@ -560,7 +560,7 @@ async def test_telegram_notification(
 ):
     from app.services.notification_service import send_telegram_notification
     ok = await send_telegram_notification(
-        "🔔 <b>MARIA</b>\n✅ إشعار تجريبي — الإعدادات شغالة",
+        "🔔 <b>فهد</b>\n✅ إشعار تجريبي — الإعدادات شغالة",
         chat_id=current_user.telegram_chat_id or None,
     )
     return {"success": ok}

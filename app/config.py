@@ -42,9 +42,9 @@ class Settings(BaseSettings):
     TELEGRAM_ADMIN_CHAT_IDS: str = ""
 
     # Feature Flags
-    MARIA_ENABLED: bool = True
-    MARIA_MAX_MESSAGES_PER_SESSION: int = 50
-    MARIA_COOLDOWN_AFTER_ESCALATION_MINUTES: int = 60
+    FAHD_ENABLED: bool = True
+    FAHD_MAX_MESSAGES_PER_SESSION: int = 50
+    FAHD_COOLDOWN_AFTER_ESCALATION_MINUTES: int = 60
 
     # Auth
     APP_SECRET_KEY: str = "change-me-in-production"

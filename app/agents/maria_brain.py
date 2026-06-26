@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any, Tuple
 import json
 from app.services.groq_client import call_groq_json
 from app.services.logging_service import logger
-from app.agents.prompts.maria_system import MARIA_SYSTEM_PROMPT
+from app.agents.prompts.maria_system import FAHD_SYSTEM_PROMPT
 from app.config import settings
 from app.database import SessionLocal
 from app.models import Product
@@ -66,7 +66,7 @@ async def think_and_respond(
     products_context = build_products_context(available_products)
     order_context = build_order_context(session.get("order_draft"))
 
-    system_prompt = MARIA_SYSTEM_PROMPT.format(
+    system_prompt = FAHD_SYSTEM_PROMPT.format(
         products_context=products_context,
         order_context=order_context
     )
@@ -95,8 +95,8 @@ async def think_and_respond(
             action = "CONTINUE"
         return response_text, order_update, action
     except json.JSONDecodeError:
-        logger.error("Maria brain: JSON parse failed")
+        logger.error("فهد brain: JSON parse failed")
         return "سمعتك! كيفاش نقدر نعاونك؟ 😊", {}, "CONTINUE"
     except Exception as e:
-        logger.error(f"Maria brain: {e}")
+        logger.error(f"فهد brain: {e}")
         return "سمحيلي، صابني مشكل تقني. حاولي مرة أخرى 🙏", {}, "CONTINUE"

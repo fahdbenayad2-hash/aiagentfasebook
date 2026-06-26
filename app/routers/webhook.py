@@ -153,7 +153,7 @@ async def receive_telegram_webhook(request: Request):
 
     if text == "/start":
         menu = (
-            "👋 مرحباً بك في نظام Maria!\n\n"
+            "👋 مرحباً بك في نظام فهد!\n\n"
             "الأوامر المتاحة:\n"
             "/orders — آخر 10 طلبات اليوم\n"
             "/order <id> — تفاصيل طلب\n"

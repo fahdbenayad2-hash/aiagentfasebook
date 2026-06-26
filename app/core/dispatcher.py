@@ -54,7 +54,7 @@ async def handle_event(event: MessagingEvent):
 
     if state.escalation_requested:
         import time
-        cooldown = settings.MARIA_COOLDOWN_AFTER_ESCALATION_MINUTES * 60
+        cooldown = settings.FAHD_COOLDOWN_AFTER_ESCALATION_MINUTES * 60
         last_active = state.last_active
         if last_active is not None:
             elapsed = time.time() - last_active.timestamp()

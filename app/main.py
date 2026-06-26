@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -23,7 +24,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting MARIA")
+    logger.info("Starting فهد")
     Base.metadata.create_all(bind=engine)
     run_migration()
 
@@ -42,10 +43,10 @@ async def lifespan(app: FastAPI):
     yield
 
     task.cancel()
-    logger.info("Shutting down MARIA")
+    logger.info("Shutting down فهد")
 
 app = FastAPI(
-    title="MARIA - AI Agent Shop",
+    title="فهد - AI Agent Shop",
     description="AI-powered customer service agent for Algerian e-commerce",
     version="2.0.0",
     lifespan=lifespan
@@ -53,6 +54,8 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
@@ -74,6 +77,14 @@ app.include_router(api_router)
 app.include_router(admin.router)
 app.include_router(health.router)
 
+@app.middleware("http")
+async def add_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled error: {exc}", exc_info=True)
@@ -93,7 +104,7 @@ async def root():
     if index_path.exists():
         return FileResponse(str(index_path))
     return {
-        "message": "مرحباً بك في MARIA للرد الآلي",
+        "message": "مرحباً بك في فهد للرد الآلي",
         "version": "2.0.0",
         "docs": "/docs",
         "admin": "/admin/"
@@ -137,12 +148,34 @@ async def data_deletion(request: Request):
         "confirmation_code": psid or "unknown"
     }
 
+DOMAIN = "poetic-patience-production.up.railway.app"
+
+VALID_SPA_ROUTES = {"/", "/auth", "/delete-account", "/demo", "/dashboard", "/privacy", "/terms"}
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots():
+    return f"User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api\nSitemap: https://{DOMAIN}/sitemap.xml"
+
+
+@app.get("/sitemap.xml", response_class=Response)
+async def sitemap():
+    base = f"https://{DOMAIN}"
+    urls = ["/", "/auth", "/delete-account", "/demo"]
+    xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    for u in urls:
+        xml += f"<url><loc>{base}{u}</loc><changefreq>weekly</changefreq></url>"
+    xml += "</urlset>"
+    return Response(content=xml, media_type="application/xml")
 
 @app.get("/{path:path}")
 async def spa_fallback(path: str):
     from fastapi.responses import FileResponse
     api_prefixes = ("api/", "admin/", "webhooks/")
-    if path.startswith(api_prefixes) or "." in path or path in ("docs", "openapi.json", "redoc", "privacy", "terms", "data-deletion"):
+    request_path = f"/{path}"
+    if path.startswith(api_prefixes) or "." in path or path in ("docs", "openapi.json", "redoc"):
+        raise HTTPException(status_code=404)
+    if request_path not in VALID_SPA_ROUTES and not request_path.startswith("/dashboard/"):
         raise HTTPException(status_code=404)
     index_path = Path(__file__).resolve().parent.parent / "frontend" / "dist" / "index.html"
     if index_path.exists():

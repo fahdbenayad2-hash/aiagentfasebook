@@ -2,7 +2,7 @@ from typing import Optional, Any
 import json
 
 from app.agents.intents import CustomerIntent
-from app.agents.prompts.maria_system import MARIA_SYSTEM_PROMPT
+from app.agents.prompts.maria_system import FAHD_SYSTEM_PROMPT
 from app.models.session import ConversationState
 from app.config import settings
 from app.services.logging_service import logger
@@ -37,7 +37,7 @@ async def generate_reply(
         "available_tools": ", ".join(available_tools) if available_tools else "none"
     }
 
-    system_prompt = MARIA_SYSTEM_PROMPT.format(**context_vars)
+    system_prompt = FAHD_SYSTEM_PROMPT.format(**context_vars)
 
     messages = [{"role": "system", "content": system_prompt}]
 
@@ -80,5 +80,5 @@ async def generate_reply(
     except json.JSONDecodeError:
         return "سمعتك! كيفاش نقدر نعاونك؟ 😊"
     except Exception as e:
-        logger.error(f"Maria reply generation failed: {e}")
+        logger.error(f"فهد reply generation failed: {e}")
         return "سمحيلي، صابني مشكل تقني. حاولي مرة أخرى 🙏"

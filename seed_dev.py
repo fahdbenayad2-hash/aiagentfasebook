@@ -15,14 +15,14 @@ def hash_password(password: str) -> str:
 def seed():
     db = SessionLocal()
     try:
-        existing = db.query(User).filter(User.email == "admin@maria.dz").first()
+        existing = db.query(User).filter(User.email == "admin@store.dz").first()
         if existing:
             print(f"User already exists: {existing.email}")
             return
 
         user = User(
             name="المطور",
-            email="admin@maria.dz",
+            email="admin@store.dz",
             phone="0550000000",
             password_hash=hash_password("admin123"),
             credits=999999,

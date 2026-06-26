@@ -10,16 +10,17 @@ export default function FooterSection() {
         <div>
           <h4 style={{ fontSize: '.85rem', fontWeight: 700, marginBottom: '.75rem', fontFamily: "'Cairo',sans-serif" }}>روابط سريعة</h4>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-            {['الرئيسية', 'عن فهد', 'شحن الرصيد', 'سياسة الخصوصية'].map(l => (
-              <li key={l}><a href="#" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem', transition: 'color .2s' }}>{l}</a></li>
-            ))}
+            <li><a href="/" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem', transition: 'color .2s' }}>الرئيسية</a></li>
+            <li><a href="/pricing" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem', transition: 'color .2s' }}>الأسعار</a></li>
+            <li><a href="/privacy" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem', transition: 'color .2s' }}>سياسة الخصوصية</a></li>
+            <li><a href="/terms" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem', transition: 'color .2s' }}>شروط الاستخدام</a></li>
           </ul>
         </div>
         <div>
           <h4 style={{ fontSize: '.85rem', fontWeight: 700, marginBottom: '.75rem', fontFamily: "'Cairo',sans-serif" }}>تواصل معنا</h4>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-            <li><a href="#" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem' }}>contact@fahd.dz</a></li>
-            <li><a href="#" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem' }}>إنستغرام</a></li>
+            <li><a href="mailto:admin@store.dz" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: '.82rem' }}>admin@store.dz</a></li>
+            <li><a href="/delete-account" style={{ color: 'var(--danger)', textDecoration: 'none', fontSize: '.78rem', opacity: 0.6 }}>حذف الحساب</a></li>
           </ul>
         </div>
         <div>
