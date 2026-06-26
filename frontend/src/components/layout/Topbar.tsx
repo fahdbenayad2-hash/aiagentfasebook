@@ -24,7 +24,7 @@ export default function TopBar() {
   };
 
   return (
-    <header style={{
+    <header className="topbar" style={{
       background: 'rgba(7,8,13,0.8)', backdropFilter: 'blur(20px)',
       borderBottom: '1px solid var(--border)',
       padding: '.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',

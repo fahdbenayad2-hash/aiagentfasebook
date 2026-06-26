@@ -14,7 +14,7 @@ const FEATURES = [
 
 export default function FeaturesSection() {
   return (
-    <section id="features" style={{ padding: '5rem 4rem', background: 'var(--bg)' }}>
+    <section id="features" className="landing-features" style={{ padding: '5rem 4rem', background: 'var(--bg)' }}>
       <ScrollReveal>
         <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
           <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '.75rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '.18em', marginBottom: '.9rem' }}>✦ المميزات</div>
@@ -22,7 +22,7 @@ export default function FeaturesSection() {
         </div>
       </ScrollReveal>
 
-      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.25rem', maxWidth: 900, margin: '0 auto' }}>
+      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.25rem', maxWidth: 900, margin: '0 auto' }}>
         {FEATURES.map((f, i) => (
           <ScrollReveal key={f.title} delay={i * 0.08}>
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.75rem', position: 'relative', overflow: 'hidden', transition: 'all .28s' }}

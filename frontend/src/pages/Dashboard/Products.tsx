@@ -2,25 +2,42 @@ import { useState, useEffect, FormEvent } from 'react';
 import client from '../../api/client';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import Skeleton from '../../components/ui/Skeleton';
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  active: boolean;
+  colors?: string[];
+  sizes?: string[];
+}
 
 const emptyForm = () => ({ name: '', price: '', stock: '', category: '', description: '', colors: '', sizes: '' });
 
 export default function Products() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    client.get('/api/products').then(r => setProducts(r.data)).catch(() => {});
+    const controller = new AbortController();
+    client.get('/api/products', { signal: controller.signal })
+      .then(r => setProducts(r.data))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Products]:', err); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   const toggleProduct = async (id: number, active: boolean) => {
     try {
       await client.patch(`/api/products/${id}`, { available: active });
       setProducts(prev => prev.map(p => p.id === id ? { ...p, active } : p));
-    } catch {}
+    } catch (err: any) { console.error('[Products toggle]:', err); }
   };
 
   const handleUpload = async (e: FormEvent<HTMLInputElement>) => {
@@ -32,7 +49,7 @@ export default function Products() {
     try {
       const { data } = await client.post('/api/products/upload', fd);
       setProducts(prev => [...prev, ...data]);
-    } catch {}
+    } catch (err: any) { console.error('[Products upload]:', err); }
     setUploading(false);
   };
 
@@ -49,7 +66,7 @@ export default function Products() {
       setProducts(prev => [...prev, { id: data.id, name: data.name, price: Number(form.price), stock: Number(form.stock) || 0, colors: form.colors ? form.colors.split(',').map(c => c.trim()) : [], sizes: form.sizes ? form.sizes.split(',').map(s => s.trim()) : [], active: true }]);
       setShowForm(false);
       setForm(emptyForm());
-    } catch {}
+    } catch (err: any) { console.error('[Products save]:', err); }
     setSaving(false);
   };
 
@@ -98,6 +115,9 @@ export default function Products() {
       )}
 
       <Card style={{ padding: 0, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 24 }}><Skeleton width="100%" height={200} borderRadius={8} /></div>
+        ) : (<>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -110,7 +130,7 @@ export default function Products() {
             {products.map(p => (
               <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '12px 14px' }}>{p.name}</td>
-                <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", fontWeight: 700 }}>{p.price.toLocaleString()} دج</td>
+                <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", fontWeight: 700 }}><span className="num">{p.price.toLocaleString()}</span> دج</td>
                 <td style={{ padding: '12px 14px' }}>{p.stock}</td>
                 <td style={{ padding: '12px 14px', color: 'var(--muted)' }}>{(p.colors || []).join(', ')}</td>
                 <td style={{ padding: '12px 14px', color: 'var(--muted)' }}>{(p.sizes || []).join(', ')}</td>
@@ -134,7 +154,8 @@ export default function Products() {
             ))}
           </tbody>
         </table>
-        {!products.length && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>ماكاش منتجات. ارفع كتالوغ أو ضغط "إضافة منتج" باش تبدا.</div>}
+        {!products.length && !loading && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>ماكاش منتجات. ارفع كتالوغ أو ضغط "إضافة منتج" باش تبدا.</div>}
+        </>)}
       </Card>
     </div>
   );

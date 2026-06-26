@@ -1,13 +1,10 @@
-import { useState, FormEvent, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Store, Eye, EyeOff, Check, X, LogIn, UserPlus, Sparkles } from 'lucide-react';
-import client from '../api/client';
 import ParticlesCanvas from '../animations/ParticlesCanvas';
 
 export default function AuthPage() {
-  const [searchParams] = useSearchParams();
-  const [isSignUp, setIsSignUp] = useState(searchParams.get('signup') === '1');
+  const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,8 +12,6 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showConfetti, setShowConfetti] = useState(false);
-  const navigate = useNavigate();
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const passwordValid = password.length >= 6;
@@ -31,53 +26,42 @@ export default function AuthPage() {
     if (!canSubmit) return;
     setLoading(true);
     try {
-      if (isSignUp) {
-        await client.post('/api/auth/register', { email, password, name: storeName.trim() });
-        setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setIsSignUp(false); }, 1500);
-      } else {
-        const { data } = await client.post('/api/auth/login', { email, password });
-        localStorage.setItem('token', data.token);
-        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/dashboard');
+      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
+      const payload = isSignUp
+        ? { email, password, name: storeName.trim() }
+        : { email, password };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw { response: { data: errBody, status: res.status } };
       }
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = '/dashboard';
+      return;
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'حدث خطأ. حاول مرة أخرى.');
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : Array.isArray(detail) ? detail.map((d: any) => d.msg || d.message || '').filter(Boolean).join('; ')
+        : 'حدث خطأ. حاول مرة أخرى.';
+      setError(msg);
     }
-    setLoading(false);
-  };
-
-  const handleSendTest = async () => {
-    if (!emailValid || !passwordValid) return;
-    setLoading(true);
-    try {
-      await client.post('/api/auth/register', { email, password, name: storeName.trim() || 'متجري' });
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 1500);
-    } catch {}
     setLoading(false);
   };
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
-      <ParticlesCanvas count={35} />
-
-      {showConfetti && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'none', overflow: 'hidden' }}>
-          {Array.from({ length: 40 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ x: Math.random() * window.innerWidth, y: -10, rotate: 0, opacity: 1 }}
-              animate={{ y: window.innerHeight + 10, rotate: Math.random() * 720, opacity: 0 }}
-              transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5 }}
-              style={{
-                position: 'absolute', width: 8, height: 8,
-                background: ['var(--gold)', 'var(--gold-m)', '#fff'][i % 3],
-                borderRadius: i % 2 === 0 ? '50%' : '2px',
-              }}
-            />
-          ))}
+      {loading && (
+        <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(7,8,13,0.85)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16 }}>
+          <div style={{ width:36, height:36, border:'3px solid var(--gold)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .6s linear infinite' }} />
+          <span style={{ fontFamily:"'Cairo',sans-serif", fontSize:'.9rem', color:'var(--gold)', fontWeight:600 }}>{isSignUp ? 'يتم إنشاء الحساب...' : 'جاري تسجيل الدخول...'}</span>
         </div>
       )}
+      <ParticlesCanvas count={35} />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -101,7 +85,7 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <div style={{
+        <div className="auth-card" style={{
           background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 20, padding: '2rem',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)', backdropFilter: 'blur(20px)',
         }}>
@@ -241,6 +225,9 @@ export default function AuthPage() {
 
           <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '.72rem', color: 'var(--faint)', lineHeight: 1.6 }}>
             بالنقر على متابعة، أنت توافق على <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>شروط الاستخدام</a>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '.7rem' }}>
+            <a href="/delete-account" style={{ color: 'var(--danger)', fontSize: '.72rem', textDecoration: 'none', opacity: 0.6 }}>حذف الحساب</a>
           </div>
         </div>
       </motion.div>

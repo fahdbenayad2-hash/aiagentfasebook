@@ -31,7 +31,7 @@ export default function HowItWorksSection() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
-    <section id="how" style={{ padding: '5rem 4rem', background: 'var(--bg3)' }}>
+    <section id="how" className="landing-how" style={{ padding: '5rem 4rem', background: 'var(--bg3)' }}>
       <ScrollReveal>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '.75rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '.18em', marginBottom: '.9rem' }}>✦ كيفاش تخدم</div>
@@ -39,7 +39,7 @@ export default function HowItWorksSection() {
         </div>
       </ScrollReveal>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: '2.5rem' }}>
+      <div className="how-tabs" style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: '2.5rem' }}>
         {TABS.map(tab => (
           <button
             key={tab.id}

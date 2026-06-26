@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 COPY . .
 RUN mkdir -p /app/data
-CMD python seed_dev.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD python -c "import os; exec(open('seed_dev.py').read()) if os.environ.get('SEED_DEV','').lower() in ('1','true','yes') else None" && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

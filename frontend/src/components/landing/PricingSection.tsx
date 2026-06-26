@@ -40,7 +40,7 @@ export default function PricingSection() {
   const pricePerThousand = 500;
 
   return (
-    <section id="pricing" style={{ padding: '5rem 4rem', background: 'var(--bg)' }}>
+    <section id="pricing" className="landing-pricing" style={{ padding: '5rem 4rem', background: 'var(--bg)' }}>
       <ScrollReveal>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '.75rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '.18em', marginBottom: '.9rem' }}>✦ الأسعار</div>
@@ -70,7 +70,7 @@ export default function PricingSection() {
         </div>
       </ScrollReveal>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.25rem', maxWidth: 940, margin: '0 auto' }}>
+      <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.25rem', maxWidth: 940, margin: '0 auto' }}>
         {PLANS.map((plan, i) => (
           <ScrollReveal key={plan.name} delay={i * 0.1}>
             <div style={{

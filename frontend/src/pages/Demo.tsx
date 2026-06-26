@@ -6,12 +6,6 @@ import client from '../api/client';
 
 const EXAMPLES = ['واش عندكم في L؟', 'بكاش التوصيل لعنابة؟', 'نبغي نطلب'];
 
-const DEMO_PRODUCTS = [
-  { name: 'قيلا رزيزة', sizes: 'L/XL', price: '2,800 دج' },
-  { name: 'جيلبة صيفية', sizes: 'M/L/XL', price: '3,200 دج' },
-  { name: 'روب تيفاناغ', sizes: 'S/M/L', price: '2,400 دج' },
-];
-
 interface Message {
   role: 'user' | 'assistant';
   content: string;

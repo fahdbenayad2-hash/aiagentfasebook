@@ -262,7 +262,8 @@ STATUS_MAP = {
 
 @router.get("/orders")
 async def list_orders(
-    limit: Optional[int] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
     wilaya: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     from_date: Optional[str] = Query(None, alias="from"),
@@ -288,11 +289,11 @@ async def list_orders(
             q = q.filter(Order.created_at <= td)
         except ValueError:
             pass
+    total = q.count()
+    pages = max(1, (total + limit - 1) // limit)
     q = q.order_by(Order.created_at.desc())
-    if limit:
-        q = q.limit(limit)
-    orders = q.all()
-    return [_order_to_row(o) for o in orders]
+    orders = q.offset((page - 1) * limit).limit(limit).all()
+    return {"data": [_order_to_row(o) for o in orders], "total": total, "page": page, "pages": pages}
 
 
 class OrderStatusUpdate(BaseModel):
@@ -345,7 +346,8 @@ async def get_facebook_connections(
 
 @router.get("/customers")
 async def list_customers(
-    limit: Optional[int] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
     search: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -353,21 +355,26 @@ async def list_customers(
     q = db.query(Customer).order_by(Customer.created_at.desc())
     if search:
         q = q.filter(Customer.name.ilike(f"%{search}%"))
-    if limit:
-        q = q.limit(limit)
-    customers = q.all()
-    return [
-        {
-            "id": c.id,
-            "name": c.name or "غير معروف",
-            "phone": c.phone or "",
-            "state": c.state or "",
-            "platform": c.platform,
-            "orders_count": len(c.orders) if hasattr(c, "orders") else 0,
-            "created_at": c.created_at.strftime("%Y-%m-%d") if c.created_at else "",
-        }
-        for c in customers
-    ]
+    total = q.count()
+    pages = max(1, (total + limit - 1) // limit)
+    customers = q.offset((page - 1) * limit).limit(limit).all()
+    return {
+        "data": [
+            {
+                "id": c.id,
+                "name": c.name or "غير معروف",
+                "phone": c.phone or "",
+                "state": c.state or "",
+                "platform": c.platform,
+                "orders_count": len(c.orders) if hasattr(c, "orders") else 0,
+                "created_at": c.created_at.strftime("%Y-%m-%d") if c.created_at else "",
+            }
+            for c in customers
+        ],
+        "total": total,
+        "page": page,
+        "pages": pages,
+    }
 
 
 #

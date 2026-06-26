@@ -2,7 +2,7 @@ import ScrollReveal from './ScrollReveal';
 
 export default function CTASection() {
   return (
-    <section style={{ padding: '5rem 4rem', background: 'var(--bg)' }}>
+    <section className="landing-cta" style={{ padding: '5rem 4rem', background: 'var(--bg)' }}>
       <ScrollReveal>
         <div style={{ maxWidth: 660, margin: '0 auto', textAlign: 'center', background: 'linear-gradient(140deg, var(--bg2) 0%, #110E00 100%)', border: '1px solid var(--b-gold)', borderRadius: 24, padding: '3.5rem', position: 'relative', overflow: 'hidden' }}>
           <div className="geo-pattern" style={{ position: 'absolute', inset: 0, opacity: 0.06, pointerEvents: 'none' }} />

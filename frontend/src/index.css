@@ -18,15 +18,17 @@
   --blue:     #4A7FB5;
   --green:    #5A9E6F;
   --purple:   #8B6FBF;
+  --sidebar-w: 260px;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
-html,body,#root{height:100%}
-html{scroll-behavior:smooth}
+html{overflow-x:hidden;scroll-behavior:smooth}
 body{
+  overflow-x:hidden;max-width:100vw;position:relative;
   background:var(--bg);color:var(--text);
   font-family:'Tajawal',sans-serif;font-size:16px;line-height:1.7;direction:rtl;
 }
+section,.container,.wrapper{max-width:100%}
 h1,h2,h3,h4{font-family:'Cairo',sans-serif;font-weight:800}
 a{color:inherit;text-decoration:none}
 button{cursor:pointer;font-family:'Cairo',sans-serif}
@@ -49,6 +51,61 @@ input,textarea,select{font-family:'Tajawal',sans-serif}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes pulse-glow{0%,100%{box-shadow:0 0 8px rgba(232,168,48,.2)}50%{box-shadow:0 0 20px rgba(232,168,48,.4)}}
+
+.num{direction:ltr;display:inline-block;unicode-bidi:isolate}
+
+@media(max-width:900px){
+  :root{--sidebar-w:0px}
+  .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%!important;height:56px!important;flex-direction:row!important;z-index:100;background:var(--bg2)!important;border-top:1px solid var(--border);padding:0 4px!important;overflow-x:auto}
+  .sidebar .nav-label,.sidebar .credit-bar{display:none!important}
+  .sidebar a{flex-shrink:0;padding:8px 10px!important;justify-content:center!important}
+  .dashboard-main{margin-right:0!important;padding-bottom:64px!important}
+  .topbar{left:0!important;padding:.6rem 1rem!important}
+  .topbar .search-box{display:none}
+  .sidebar .user-info{display:none!important}
+  .grid-4{grid-template-columns:repeat(2,1fr)!important}
+  .grid-3,.grid-2{grid-template-columns:1fr!important}
+  .charts-row{grid-template-columns:1fr!important}
+  .conv-layout{flex-direction:column!important;height:auto!important}
+  .conv-layout .conv-list{width:100%!important;margin-left:0!important;max-height:200px}
+  .landing-hero{grid-template-columns:1fr!important;text-align:center;padding:3rem 1rem!important;gap:2.5rem!important}
+  .landing-hero h1{font-size:1.8rem!important}
+  .landing-hero .hero-actions{justify-content:center!important}
+  .landing-hero > div:last-child{max-width:100%!important;overflow:hidden!important}
+  .landing-hero > div:last-child > div{max-width:100%!important;width:clamp(240px,60%,290px)!important;margin:0 auto}
+  .features-grid{grid-template-columns:1fr 1fr!important}
+  .pricing-grid{grid-template-columns:1fr!important}
+  .landing-features{padding:2rem 1rem!important}
+  .landing-how{padding:2rem 1rem!important}
+  .landing-pricing{padding:2rem 1rem!important;gap:12px!important}
+  .landing-faq{padding:2rem 1rem!important}
+  .landing-cta{padding:3rem 1rem!important}
+  .landing-footer{text-align:center;padding:2rem 1rem!important}
+  .landing-footer > div:nth-child(2){grid-template-columns:1fr!important;gap:1.5rem!important}
+  table{font-size:.78rem!important}
+  th,td{padding:8px 10px!important}
+  .settings-tabs{flex-wrap:nowrap;overflow-x:auto;gap:4px}
+  .settings-tabs button{white-space:nowrap;font-size:.78rem;padding:.35rem .65rem}
+  .how-tabs{overflow-x:auto;white-space:nowrap;flex-wrap:nowrap!important;justify-content:flex-start!important;padding:0 1rem;gap:8px!important}
+  .how-tabs button{white-space:nowrap;flex-shrink:0}
+}
+@media(max-width:480px){
+  .grid-4{grid-template-columns:1fr!important}
+  .features-grid{grid-template-columns:1fr!important}
+  .landing-nav .nav-links{display:none!important}
+  .landing-nav .mobile-menu-btn{display:block!important}
+  .auth-card{padding:1.2rem!important}
+  .auth-form input{font-size:.82rem!important;padding:10px 36px 10px 10px!important}
+  .stats-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .credits-packs{grid-template-columns:1fr!important}
+  .modal-content{width:95%!important;padding:1rem!important}
+  .toast-container{left:8px!important;right:8px!important;bottom:64px!important}
+  .toast-container > div{min-width:0!important;max-width:100%!important}
+  h2{font-size:1.1rem!important}
+  h3{font-size:.95rem!important}
+  .sidebar a svg{width:20px;height:20px}
+  .dashboard-content{padding:1rem!important}
+}
 
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}

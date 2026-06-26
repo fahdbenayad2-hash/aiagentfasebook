@@ -3,8 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import client from '../../api/client';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
+import Skeleton from '../../components/ui/Skeleton';
 import ChatBubble from '../../components/shared/ChatBubble';
 import useWebSocket from '../../hooks/useWebSocket';
+import ScrollReveal from '../../components/landing/ScrollReveal';
 
 interface Conv {
   id: number;
@@ -32,6 +34,7 @@ export default function Conversations() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [manualMode, setManualMode] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'manual' | 'closed'>('all');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -46,13 +49,24 @@ export default function Conversations() {
   });
 
   useEffect(() => {
-    client.get('/api/conversations').then(r => setConvs(r.data)).catch(() => {});
+    const controller = new AbortController();
+    client.get('/api/conversations', { signal: controller.signal })
+      .then(r => setConvs(r.data))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Conversations list]:', err); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!convId) return;
-    client.get(`/api/conversations/${convId}/messages`).then(r => setMessages(r.data)).catch(() => {});
-    client.get(`/api/conversations/${convId}`).then(r => setManualMode(r.data.manual || false)).catch(() => {});
+    const controller = new AbortController();
+    client.get(`/api/conversations/${convId}/messages`, { signal: controller.signal })
+      .then(r => setMessages(r.data))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Conversations msgs]:', err); });
+    client.get(`/api/conversations/${convId}`, { signal: controller.signal })
+      .then(r => setManualMode(r.data.manual || false))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Conversations mode]:', err); });
+    return () => controller.abort();
   }, [convId]);
 
   useEffect(() => {
@@ -90,8 +104,8 @@ export default function Conversations() {
 
   if (!convId) {
     return (
-      <div style={{ display: 'flex', height: 'calc(100vh - 120px)' }}>
-        <LeftPanel convs={filtered} selected={null} onSelect={selectConv} search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} />
+      <div className="conv-layout" style={{ display: 'flex', height: 'calc(100vh - 120px)' }}>
+        <LeftPanel loading={loading} convs={filtered} selected={null} onSelect={selectConv} search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
           اختر محادثة لعرضها
         </div>
@@ -100,8 +114,8 @@ export default function Conversations() {
   }
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 120px)' }}>
-      <LeftPanel convs={filtered} selected={parseInt(convId)} onSelect={selectConv} search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} />
+    <div className="conv-layout" style={{ display: 'flex', height: 'calc(100vh - 120px)' }}>
+      <LeftPanel loading={loading} convs={filtered} selected={parseInt(convId)} onSelect={selectConv} search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg3)', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -168,14 +182,14 @@ export default function Conversations() {
 }
 
 function LeftPanel({
-  convs, selected, onSelect, search, onSearch, filter, onFilter,
+  loading, convs, selected, onSelect, search, onSearch, filter, onFilter,
 }: {
-  convs: Conv[]; selected: number | null; onSelect: (id: number) => void;
+  loading: boolean; convs: Conv[]; selected: number | null; onSelect: (id: number) => void;
   search: string; onSearch: (s: string) => void;
   filter: string; onFilter: (f: any) => void;
 }) {
   return (
-    <div style={{ width: 360, marginLeft: 16, display: 'flex', flexDirection: 'column' }}>
+    <div className="conv-list" style={{ width: 360, marginLeft: 16, display: 'flex', flexDirection: 'column' }}>
       <input
         value={search}
         onChange={e => onSearch(e.target.value)}
@@ -209,6 +223,7 @@ function LeftPanel({
         ))}
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading && [1,2,3,4,5].map(i => <Skeleton key={i} width="100%" height={60} borderRadius={8} style={{marginBottom:8}} />)}
         {convs.map(c => (
           <div
             key={c.id}
@@ -234,7 +249,7 @@ function LeftPanel({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Badge variant="default">{c.status}</Badge>
                   {c.unread > 0 && (
-                    <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--gold)', color: 'var(--bg)', fontSize: '.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="num" style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--gold)', color: 'var(--bg)', fontSize: '.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {c.unread}
                     </span>
                   )}

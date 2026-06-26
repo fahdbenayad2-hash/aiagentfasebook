@@ -17,7 +17,7 @@ export default function FAQSection() {
   const [allOpen, setAllOpen] = useState(false);
 
   return (
-    <section id="faq" style={{ padding: '5rem 4rem', background: 'var(--bg2)' }}>
+    <section id="faq" className="landing-faq" style={{ padding: '5rem 4rem', background: 'var(--bg2)' }}>
       <ScrollReveal>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '.75rem', fontWeight: 700, color: 'var(--gold)', letterSpacing: '.18em', marginBottom: '.9rem' }}>✦ أسئلة شائعة</div>

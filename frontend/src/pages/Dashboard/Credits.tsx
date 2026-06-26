@@ -8,6 +8,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import { staggerContainer, fadeUp } from '../../animations/variants';
 import { showToast } from '../../components/ui/Toast';
+import Skeleton from '../../components/ui/Skeleton';
 
 const PACKS = [
   { name: 'ستارتر', credits: 5000, price: 2500, ht: 2125, tva: 375, popular: false },
@@ -17,11 +18,17 @@ const PACKS = [
 
 export default function Credits() {
   const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [showBuy, setShowBuy] = useState(false);
   const [selectedPack, setSelectedPack] = useState<typeof PACKS[0] | null>(null);
 
   useEffect(() => {
-    client.get('/api/auth/me').then(r => setBalance(r.data?.credits || 0)).catch(() => {});
+    const controller = new AbortController();
+    client.get('/api/auth/me', { signal: controller.signal })
+      .then(r => setBalance(r.data?.credits || 0))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Credits]:', err); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   const handleBuy = (pack: typeof PACKS[0]) => {
@@ -42,7 +49,13 @@ export default function Credits() {
           <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(232,168,48,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
             <Coins size={28} style={{ color: 'var(--gold)' }} />
           </div>
-          <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '3rem', fontWeight: 900, color: 'var(--gold)', lineHeight: 1 }}>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <Skeleton width={120} height={48} borderRadius={8} /><Skeleton width="60%" height={14} /><Skeleton width="80%" height={8} />
+            </div>
+          ) : (
+            <>
+          <div className="num" style={{ fontFamily: "'Cairo',sans-serif", fontSize: '3rem', fontWeight: 900, color: 'var(--gold)', lineHeight: 1 }}>
             {balance.toLocaleString()}
           </div>
           <div style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: 16 }}>الرصيد المتبقي</div>
@@ -51,11 +64,13 @@ export default function Credits() {
               <div style={{ width: `${Math.min((balance / 100000) * 100, 100)}%`, height: '100%', background: 'linear-gradient(90deg, var(--gold), var(--terra))', borderRadius: 4, transition: 'width 1s ease-out' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.7rem', color: 'var(--faint)', marginTop: 4 }}>
-              <span>مستهلك: {Math.max(0, 100000 - balance).toLocaleString()}</span>
-              <span>الحد: 100,000</span>
+              <span className="num">مستهلك: {Math.max(0, 100000 - balance).toLocaleString()}</span>
+              <span className="num">الحد: 100,000</span>
             </div>
           </div>
           <Button onClick={() => setShowBuy(true)} size="lg">شحن الرصيد ←</Button>
+            </>
+          )}
         </Card>
       </motion.div>
 
@@ -75,10 +90,10 @@ export default function Credits() {
                   <div style={{ fontSize: '.72rem', color: 'var(--muted)' }}>{t.date}</div>
                 </div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: "'Cairo',sans-serif", fontWeight: 700, fontSize: '.85rem', color: t.amount > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  <div className="num" style={{ fontFamily: "'Cairo',sans-serif", fontWeight: 700, fontSize: '.85rem', color: t.amount > 0 ? 'var(--success)' : 'var(--danger)' }}>
                     {t.amount > 0 ? '+' : ''}{t.amount.toLocaleString()}
                   </div>
-                  <div style={{ fontSize: '.72rem', color: 'var(--muted)' }}>{t.balanceAfter.toLocaleString()} ←</div>
+                  <div className="num" style={{ fontSize: '.72rem', color: 'var(--muted)' }}>{t.balanceAfter.toLocaleString()} ←</div>
                 </div>
               </div>
             ))}
@@ -86,7 +101,7 @@ export default function Credits() {
         </Card>
       </motion.div>
 
-      <motion.div variants={staggerContainer} style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+      <motion.div className="credits-packs" variants={staggerContainer} style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
         {PACKS.map((pack, i) => (
           <motion.div key={pack.name} variants={fadeUp} transition={{ delay: i * 0.08 }}>
             <Card gold={pack.popular} hover style={{ textAlign: 'center', position: 'relative', overflow: 'visible' }}>
@@ -96,10 +111,10 @@ export default function Credits() {
                 </div>
               )}
               <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '.85rem', fontWeight: 700, color: 'var(--muted)', marginBottom: '.5rem' }}>{pack.name}</div>
-              <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, color: 'var(--gold)', marginBottom: '.25rem' }}>
+              <div className="num" style={{ fontFamily: "'Cairo',sans-serif", fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, color: 'var(--gold)', marginBottom: '.25rem' }}>
                 {pack.price.toLocaleString()} <sub style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--muted)' }}>دج</sub>
               </div>
-              <div style={{ fontSize: '.88rem', color: 'var(--muted)', marginBottom: '1rem' }}>{pack.credits.toLocaleString()} نقطة</div>
+              <div className="num" style={{ fontSize: '.88rem', color: 'var(--muted)', marginBottom: '1rem' }}>{pack.credits.toLocaleString()} نقطة</div>
               <div style={{ fontSize: '.7rem', color: 'var(--faint)', marginBottom: '1rem' }}>
                 ش ق م: {pack.ht.toLocaleString()} دج | TVA: {pack.tva} دج
               </div>
@@ -114,14 +129,14 @@ export default function Credits() {
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: 8 }}>باقة {selectedPack.name}</div>
             <div style={{ fontFamily: "'Cairo',sans-serif", fontSize: '2rem', fontWeight: 900, color: 'var(--gold)' }}>
-              {selectedPack.credits.toLocaleString()} نقطة
+              <span className="num">{selectedPack.credits.toLocaleString()}</span> نقطة
             </div>
-            <div style={{ fontSize: '.9rem', color: 'var(--muted)', marginBottom: 16 }}>
+            <div className="num" style={{ fontSize: '.9rem', color: 'var(--muted)', marginBottom: 16 }}>
               {selectedPack.price.toLocaleString()} دج (ش ق م: {selectedPack.ht} دج + TVA: {selectedPack.tva} دج)
             </div>
             <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: '1rem', marginBottom: 16, fontSize: '.82rem', color: 'var(--muted)' }}>
-              <p>سيتم إضافة {selectedPack.credits.toLocaleString()} نقطة إلى رصيدك فوراً.</p>
-              <p style={{ marginTop: 4 }}>الرصيد الحالي: {balance.toLocaleString()} ← الرصيد بعد الشراء: {(balance + selectedPack.credits).toLocaleString()}</p>
+                <p>سيتم إضافة <span className="num">{selectedPack.credits.toLocaleString()}</span> نقطة إلى رصيدك فوراً.</p>
+                <p style={{ marginTop: 4 }}>الرصيد الحالي: <span className="num">{balance.toLocaleString()}</span> ← الرصيد بعد الشراء: <span className="num">{(balance + selectedPack.credits).toLocaleString()}</span></p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="outline" style={{ flex: 1 }} onClick={() => setShowBuy(false)}>إلغاء</Button>

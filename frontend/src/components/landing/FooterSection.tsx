@@ -1,6 +1,6 @@
 export default function FooterSection() {
   return (
-    <footer style={{ borderTop: '1px solid var(--border)' }}>
+    <footer className="landing-footer" style={{ borderTop: '1px solid var(--border)' }}>
       <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, var(--gold-m), transparent)' }} />
       <div style={{ padding: '2rem 4rem', display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '2rem', maxWidth: 1100, margin: '0 auto' }}>
         <div>

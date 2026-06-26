@@ -1,13 +1,28 @@
 import { useState, useEffect, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import client from '../../api/client';
+import { clearToken } from '../../hooks/useAuth';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Modal from '../../components/ui/Modal';
+
+interface SettingsProduct {
+  id: number;
+  name: string;
+  price: number;
+  sizes?: string[];
+  active?: boolean;
+}
 
 export default function Settings() {
-  const [tab, setTab] = useState<'page' | 'products' | 'notifications'>('page');
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<'page' | 'products' | 'notifications' | 'account'>('page');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [connectedPage, setConnectedPage] = useState<{ name: string; id: string } | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<SettingsProduct[]>([]);
   const [notifPhone, setNotifPhone] = useState('');
   const [notifNewOrder, setNotifNewOrder] = useState(true);
   const [notifHandoff, setNotifHandoff] = useState(true);
@@ -16,26 +31,34 @@ export default function Settings() {
   const [testResult, setTestResult] = useState<'ok' | 'fail' | null>(null);
 
   useEffect(() => {
-    client.get('/api/facebook/connections').then(r => {
-      const pages = r.data?.connections || r.data || [];
-      if (pages.length) setConnectedPage(pages[0]);
-    }).catch(() => {});
+    const controller = new AbortController();
+    client.get('/api/facebook/connections', { signal: controller.signal })
+      .then(r => {
+        const pages = r.data?.connections || r.data || [];
+        if (pages.length) setConnectedPage(pages[0]);
+      })
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Settings fb]:', err); });
 
-    client.get('/api/products').then(r => setProducts(r.data)).catch(() => {});
+    client.get('/api/products', { signal: controller.signal })
+      .then(r => setProducts(r.data))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Settings prods]:', err); });
 
-    client.get('/api/settings/notifications').then(r => {
-      setNotifPhone(r.data.phone || '');
-      setNotifNewOrder(r.data.new_order ?? true);
-      setNotifHandoff(r.data.handoff ?? true);
-      setTelegramChatId(r.data.telegram_chat_id || '');
-    }).catch(() => {});
+    client.get('/api/settings/notifications', { signal: controller.signal })
+      .then(r => {
+        setNotifPhone(r.data.phone || '');
+        setNotifNewOrder(r.data.new_order ?? true);
+        setNotifHandoff(r.data.handoff ?? true);
+        setTelegramChatId(r.data.telegram_chat_id || '');
+      })
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Settings notif]:', err); });
+    return () => controller.abort();
   }, []);
 
   const handleProductToggle = async (id: number, available: boolean) => {
     try {
       await client.patch(`/api/products/${id}`, { available });
       setProducts(prev => prev.map(p => p.id === id ? { ...p, active: available } : p));
-    } catch {}
+    } catch (err: any) { console.error('[Settings toggle]:', err); }
   };
 
   const handleCSVUpload = async (e: FormEvent<HTMLInputElement>) => {
@@ -46,7 +69,7 @@ export default function Settings() {
     try {
       const { data } = await client.post('/api/products/upload', form);
       setProducts(prev => [...prev, ...data]);
-    } catch {}
+    } catch (err: any) { console.error('[Settings upload]:', err); }
   };
 
   const saveNotifications = async () => {
@@ -57,7 +80,7 @@ export default function Settings() {
         handoff: notifHandoff,
         telegram_chat_id: telegramChatId,
       });
-    } catch {}
+    } catch (err: any) { console.error('[Settings save]:', err); }
   };
 
   const testTelegram = async () => {
@@ -72,21 +95,38 @@ export default function Settings() {
       });
       const { data } = await client.post('/api/settings/notifications/test');
       setTestResult(data.success ? 'ok' : 'fail');
-    } catch {
+    } catch (err: any) {
+      console.error('[Settings telegram]:', err);
       setTestResult('fail');
     }
     setTestingTelegram(false);
+  };
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await client.delete('/api/auth/account', { data: { password: deletePassword } });
+      clearToken();
+      navigate('/auth');
+    } catch (err: any) {
+      console.error('[Settings delete]:', err);
+      alert('كلمة المرور غير صحيحة');
+    }
+    setDeleting(false);
+    setShowDeleteModal(false);
+    setDeletePassword('');
   };
 
   const tabs = [
     { key: 'page', label: 'الصفحة' },
     { key: 'products', label: 'المنتجات' },
     { key: 'notifications', label: 'الإشعارات' },
+    { key: 'account', label: 'الحساب' },
   ];
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+      <div className="settings-tabs" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
         {tabs.map(t => (
           <button
             key={t.key}
@@ -190,6 +230,33 @@ export default function Settings() {
           </Card>
         </div>
       )}
+
+      {tab === 'account' && (
+        <Card style={{ border: '1px solid var(--danger)', background: 'rgba(220,78,78,0.04)' }}>
+          <h3 style={{ marginBottom: 12, color: 'var(--danger)' }}>منطقة الخطر</h3>
+          <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
+            حذف الحساب راح يمسح جميع بياناتك نهائياً. ما تقدرش ترجعهم بعد الحذف.
+          </p>
+          <Button variant="danger" onClick={() => setShowDeleteModal(true)}>حذف الحساب</Button>
+        </Card>
+      )}
+
+      <Modal open={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeletePassword(''); }} title="تأكيد حذف الحساب">
+        <p style={{ marginBottom: 16, color: 'var(--muted)', fontSize: '.9rem', lineHeight: 1.7 }}>
+          هل أنت متأكد؟ هذا الإجراء نهائي ولا يمكن التراجع عنه. اكتب كلمة المرور لتأكيد الحذف.
+        </p>
+        <Input
+          label="كلمة المرور"
+          type="password"
+          value={deletePassword}
+          onChange={e => setDeletePassword(e.target.value)}
+          placeholder="اكتب كلمة المرور"
+        />
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <Button variant="danger" onClick={deleteAccount} loading={deleting}>تأكيد الحذف</Button>
+          <Button variant="ghost" onClick={() => { setShowDeleteModal(false); setDeletePassword(''); }}>رجوع</Button>
+        </div>
+      </Modal>
 
       {tab === 'notifications' && (
         <Card>

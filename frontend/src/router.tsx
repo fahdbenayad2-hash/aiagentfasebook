@@ -14,6 +14,7 @@ const Analytics = lazy(() => import('./pages/Dashboard/Analytics'));
 const Credits = lazy(() => import('./pages/Dashboard/Credits'));
 const Settings = lazy(() => import('./pages/Dashboard/Settings'));
 const Demo = lazy(() => import('./pages/Demo'));
+const DeleteAccount = lazy(() => import('./pages/DeleteAccount'));
 
 function Loader() {
   return (
@@ -23,13 +24,19 @@ function Loader() {
   );
 }
 
+import ToastContainer from './components/ui/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <ToastContainer />
+      <ErrorBoundary>
       <Suspense fallback={<Loader />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/delete-account" element={<DeleteAccount />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
@@ -45,6 +52,7 @@ export default function AppRouter() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

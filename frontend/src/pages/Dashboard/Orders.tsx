@@ -4,6 +4,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
+import Skeleton from '../../components/ui/Skeleton';
 
 interface Order {
   id: number;
@@ -14,6 +15,13 @@ interface Order {
   total: number;
   status: string;
   date: string;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pages: number;
 }
 
 const statusColors: Record<string, 'muted' | 'gold' | 'terra' | 'green'> = {
@@ -35,28 +43,54 @@ const WILAYAS = [
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
   const [wilayaFilter, setWilayaFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [cancelId, setCancelId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const limit = 20;
 
-  const fetchOrders = () => {
-    const params = new URLSearchParams();
+  useEffect(() => {
+    setLoading(true);
+    setPage(1);
+  }, [wilayaFilter, statusFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     if (wilayaFilter) params.set('wilaya', wilayaFilter);
     if (statusFilter) params.set('status', statusFilter);
     if (dateFrom) params.set('from', dateFrom);
     if (dateTo) params.set('to', dateTo);
-    client.get(`/api/orders?${params}`).then(r => setOrders(r.data)).catch(() => {});
-  };
-
-  useEffect(() => { fetchOrders(); }, [wilayaFilter, statusFilter, dateFrom, dateTo]);
+    client.get(`/api/orders?${params}`, { signal: controller.signal })
+      .then(r => {
+        const res: PaginatedResponse<Order> = r.data;
+        setOrders(res.data);
+        setTotal(res.total);
+        setPages(res.pages);
+      })
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[Orders]:', err); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [page, wilayaFilter, statusFilter, dateFrom, dateTo]);
 
   const confirmOrder = async (id: number) => {
     try {
       await client.patch(`/api/orders/${id}`, { status: 'confirmed' });
-      fetchOrders();
-    } catch {}
+      const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+      if (wilayaFilter) params.set('wilaya', wilayaFilter);
+      if (statusFilter) params.set('status', statusFilter);
+      const res = await client.get(`/api/orders?${params}`);
+      const data: PaginatedResponse<Order> = res.data;
+      setOrders(data.data);
+      setTotal(data.total);
+      setPages(data.pages);
+    } catch (err: any) { console.error('[Orders confirm]:', err); }
   };
 
   const cancelOrder = async () => {
@@ -64,8 +98,15 @@ export default function Orders() {
     try {
       await client.patch(`/api/orders/${cancelId}`, { status: 'cancelled' });
       setCancelId(null);
-      fetchOrders();
-    } catch {}
+      const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+      if (wilayaFilter) params.set('wilaya', wilayaFilter);
+      if (statusFilter) params.set('status', statusFilter);
+      const res = await client.get(`/api/orders?${params}`);
+      const data: PaginatedResponse<Order> = res.data;
+      setOrders(data.data);
+      setTotal(data.total);
+      setPages(data.pages);
+    } catch (err: any) { console.error('[Orders cancel]:', err); }
   };
 
   const exportCSV = () => {
@@ -79,10 +120,13 @@ export default function Orders() {
     a.click();
   };
 
+  const from = (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h3 style={{ fontSize: '1rem' }}>الطلبات ({orders.length})</h3>
+        <h3 style={{ fontSize: '1rem' }}>الطلبات ({total})</h3>
         <Button variant="outline" size="sm" onClick={exportCSV}>تصدير CSV</Button>
       </div>
 
@@ -123,6 +167,9 @@ export default function Orders() {
       </div>
 
       <Card style={{ padding: 0, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 24 }}><Skeleton width="100%" height={260} borderRadius={8} /></div>
+        ) : (<>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
             <thead>
@@ -135,12 +182,12 @@ export default function Orders() {
             <tbody>
               {orders.map(o => (
                 <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", color: 'var(--gold)', fontWeight: 700 }}>#{o.id}</td>
+                  <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", color: 'var(--gold)', fontWeight: 700 }}>#<span className="num">{o.id}</span></td>
                   <td style={{ padding: '12px 14px' }}>{o.customer}</td>
                   <td style={{ padding: '12px 14px', color: 'var(--muted)' }}>{o.wilaya}</td>
                   <td style={{ padding: '12px 14px' }}>{o.product}</td>
                   <td style={{ padding: '12px 14px' }}>{o.size}</td>
-                  <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", fontWeight: 700 }}>{o.total.toLocaleString()} دج</td>
+                  <td style={{ padding: '12px 14px', fontFamily: "'Cairo',sans-serif", fontWeight: 700 }}><span className="num">{o.total.toLocaleString()}</span> دج</td>
                   <td style={{ padding: '12px 14px' }}><Badge variant={o.status === 'مؤكد' ? 'green' : o.status === 'ملغي' ? 'red' : 'yellow'}>{o.status}</Badge></td>
                   <td style={{ padding: '12px 14px', color: 'var(--muted)', fontSize: '.78rem' }}>{o.date}</td>
                   <td style={{ padding: '12px 14px', display: 'flex', gap: 4 }}>
@@ -152,9 +199,20 @@ export default function Orders() {
               ))}
             </tbody>
           </table>
-          {!orders.length && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>ماكاش طلبات</div>}
-        </div>
+          {!orders.length && !loading && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>ماكاش طلبات</div>}
+          </div>
+        </>)}
       </Card>
+
+      {pages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, fontSize: '.85rem', color: 'var(--muted)' }}>
+          <span>عرض <span className="num">{from}</span>-<span className="num">{to}</span> من <span className="num">{total}</span> طلب</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← السابق</Button>
+            <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(p => p + 1)}>التالي →</Button>
+          </div>
+        </div>
+      )}
 
       <Modal open={!!cancelId} onClose={() => setCancelId(null)} title="تأكيد الإلغاء">
         <p style={{ marginBottom: 16, color: 'var(--muted)' }}>هل أنت متأكد من إلغاء الطلب #{cancelId}؟</p>

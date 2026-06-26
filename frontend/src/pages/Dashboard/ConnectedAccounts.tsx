@@ -3,13 +3,22 @@ import client from '../../api/client';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 
+interface ConnectedPage {
+  name: string;
+  id: string;
+  token_preview: string;
+  is_active: boolean;
+}
+
 export default function ConnectedAccounts() {
-  const [pages, setPages] = useState<any[]>([]);
+  const [pages, setPages] = useState<ConnectedPage[]>([]);
 
   useEffect(() => {
-    client.get('/api/facebook/connections').then(r => {
-      setPages(r.data?.connections || []);
-    }).catch(() => {});
+    const controller = new AbortController();
+    client.get('/api/facebook/connections', { signal: controller.signal })
+      .then(r => setPages(r.data?.connections || []))
+      .catch((err: any) => { if (err.name !== 'CanceledError') console.error('[ConnectedAccounts]:', err); });
+    return () => controller.abort();
   }, []);
 
   return (

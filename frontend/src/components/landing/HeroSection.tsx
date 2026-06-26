@@ -41,7 +41,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section id="hero" className="geo-pattern" style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: '4rem', padding: '8rem 4rem 4rem', position: 'relative', overflow: 'hidden' }}>
+    <section id="hero" className="landing-hero geo-pattern" style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', gap: '4rem', padding: '8rem 4rem 4rem', position: 'relative', overflow: 'hidden' }}>
       <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}

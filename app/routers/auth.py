@@ -74,8 +74,8 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     name: str
     email: str
-    phone: str
     password: str
+    phone: str = ""
 
 
 class UserResponse(BaseModel):
@@ -98,7 +98,7 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
     return {"token": token, "user": UserResponse.model_validate(user)}
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register")
 async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == req.email).first()
     if existing:
@@ -106,7 +106,7 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     user = User(
         name=req.name,
         email=req.email,
-        phone=req.phone,
+        phone=req.phone or "",
         password_hash=_hash_password(req.password),
         credits=5000,
     )
@@ -114,9 +114,40 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     logger.info(f"New user registered: {user.email}")
-    return user
+    token = _create_token(user.id)
+    return {"token": token, "user": UserResponse.model_validate(user)}
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str
+
+
+class PublicDeleteAccountRequest(BaseModel):
+    email: str
+    password: str
 
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.delete("/account")
+async def delete_account(req: DeleteAccountRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not _verify_password(req.password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="كلمة المرور غير صحيحة")
+    db.delete(current_user)
+    db.commit()
+    logger.info(f"Account deleted: {current_user.email}")
+    return {"detail": "تم حذف الحساب بنجاح"}
+
+
+@router.post("/delete-account")
+async def public_delete_account(req: PublicDeleteAccountRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user or not _verify_password(req.password, user.password_hash):
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني أو كلمة المرور غير صحيحة")
+    db.delete(user)
+    db.commit()
+    logger.info(f"Account deleted via public form: {user.email}")
+    return {"detail": "تم حذف الحساب بنجاح"}

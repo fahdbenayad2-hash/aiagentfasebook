@@ -19,7 +19,7 @@ export default function Sidebar() {
   const w = collapsed ? 72 : 260;
 
   return (
-    <aside style={{
+    <aside className="sidebar" style={{
       width: w, background: 'var(--bg2)', borderLeft: '1px solid var(--border)',
       height: '100vh', position: 'fixed', right: 0, top: 0,
       display: 'flex', flexDirection: 'column', zIndex: 50,

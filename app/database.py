@@ -50,6 +50,8 @@ def run_migration():
             ("users", "notification_phone", "VARCHAR"),
             ("users", "notify_new_order", "BOOLEAN DEFAULT 1"),
             ("users", "notify_handoff", "BOOLEAN DEFAULT 1"),
+            ("users", "telegram_chat_id", "VARCHAR"),
+            ("users", "phone", "VARCHAR"),
         ]
         for table, column, col_type in migrations:
             try:
